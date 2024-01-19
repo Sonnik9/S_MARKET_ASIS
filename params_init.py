@@ -11,7 +11,7 @@ class BASIC_PARAMETRS():
     def __init__(self):        
         self.SOLI_DEO_GLORIA = 'Soli Deo Gloria!'      
         self.market = 'spot'
-        self.test_flag = True
+        self.test_flag = False
         
     def init_api_key(self):
         self.tg_api_token = os.getenv("TG_API_TOKEN", "")

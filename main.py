@@ -47,35 +47,35 @@ class TG_ASSISTENT(UTILS_APII):
         item = {}  
         buy_order_returned_list = []
         try:
-            # pass
-            item["symbol"] = symbol
-            item['in_position'] = False
-            item['qnt'] = None 
-            item["recalc_depo"] = None 
-            item["price_precision"] = None 
-            item["tick_size"] = None
-            item["current_price"] = self.get_current_price(symbol)
-            print(f'item["current_price"]: {item["current_price"]}')
+            pass
+            # item["symbol"] = symbol
+            # item['in_position'] = False
+            # item['qnt'] = None 
+            # item["recalc_depo"] = None 
+            # item["price_precision"] = None 
+            # item["tick_size"] = None
+            # item["current_price"] = self.get_current_price(symbol)
+            # print(f'item["current_price"]: {item["current_price"]}')
             
-            if self.atr_TP_flag:
-                timeframe = '15m'
-                limit = 100
-                m1_15_data = self.get_ccxtBinance_klines(self.symbol, timeframe, limit)            
-                m1_15_data['TR'] = abs(m1_15_data['High'] - m1_15_data['Low'])
-                m1_15_data['ATR'] = m1_15_data['TR'].rolling(window=14).mean()
-                item['atr'] = m1_15_data['ATR'].iloc[-1]
+            # if self.atr_TP_flag:
+            #     timeframe = '15m'
+            #     limit = 100
+            #     m1_15_data = self.get_ccxtBinance_klines(self.symbol, timeframe, limit)            
+            #     m1_15_data['TR'] = abs(m1_15_data['High'] - m1_15_data['Low'])
+            #     m1_15_data['ATR'] = m1_15_data['TR'].rolling(window=14).mean()
+            #     item['atr'] = m1_15_data['ATR'].iloc[-1]
 
-            item = self.make_market_order_temp_func(item, depo)
+            # item = self.make_market_order_temp_func(item, depo)
 
-            if item['in_position']:
-                buy_order_returned_list.append(1)
-                item = self.tp_make_orders(item)
-                if item["done_level"] == 2:
-                    buy_order_returned_list.append(2)   
-                else:
-                    buy_order_returned_list.append(-2) 
-            else:
-                buy_order_returned_list.append(-1)
+            # if item['in_position']:
+            #     buy_order_returned_list.append(1)
+            #     item = self.tp_make_orders(item)
+            #     if item["done_level"] == 2:
+            #         buy_order_returned_list.append(2)   
+            #     else:
+            #         buy_order_returned_list.append(-2) 
+            # else:
+            #     buy_order_returned_list.append(-1)
 
         except Exception as ex:
             buy_order_returned_list.append(0)
@@ -128,8 +128,8 @@ class TG_MANAGER(TG_ASSISTENT):
             top_coins = [f"{link_emoji} https://www.coinglass.com/tv/Binance_{x}" for x in top_coins]
             response_message = ""
             if top_coins:
-                # response_message = str(top_coins)[2:-2].replace("', '", ', ')
-                response_message = money_emoji + '\n\n' + ', '.join(top_coins) + '\n\n' + money_emoji 
+                # response_message = str(top_coins)[2:-2].replace("', '", " ")
+                response_message = f"{money_emoji} {money_emoji} {money_emoji}" + '\n\n' + '\n\n'.join(top_coins) + '\n\n' + f"{money_emoji} {money_emoji} {money_emoji}"
                 message.text = self.connector_func(message, response_message)
             else:
                 response_message = "Some problem with fetcing coins..."
@@ -148,7 +148,7 @@ class TG_MANAGER(TG_ASSISTENT):
         def handle_getLink_redirect(message): 
             symbol = None    
             symbol = message.text.strip().upper()
-            response_message = money_emoji + '\n\n' + f"{link_emoji} https://www.coinglass.com/tv/Binance_{symbol}" + '\n\n' + money_emoji
+            response_message = f"{money_emoji} {money_emoji} {money_emoji}" + '\n\n' + f"{link_emoji} https://www.coinglass.com/tv/Binance_{symbol}" + '\n\n' + f"{money_emoji} {money_emoji} {money_emoji}"
             message.text = self.connector_func(message, response_message)
             self.handle_getLink_redirect_flag = False
 
