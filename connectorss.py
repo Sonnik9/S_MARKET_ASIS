@@ -71,19 +71,22 @@ class CONNECTOR_TG(CONNECTOR_BINANCEE):
         super().__init__()      
         self.bot = telebot.TeleBot(self.tg_api_token)
         self.menu_markup = self.create_menu()
-        self.reserved_frathes_list = ["START", "TOP_COINS", "BUY_ORDER", "SELL_ORDER", "CANCEL_ORDERS", "SELL_ALL_to", "SETTINGS", "CASH FLOW", "BALANCE", "1", "2"]                    
+        self.reserved_frathes_list = ["START", "TOP_COINS", "GET LINK", "FILTER", "RISK", "BUY", "SELL", "TP", "BUY+" "CANCEL_ORDERS", "SELL_ALL", "BOOK", "BALANCE", "1", "2", "y", "n"]                    
 
     def create_menu(self):
         menu_markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)
         button1 = types.KeyboardButton("START")
-        button2 = types.KeyboardButton("TOP_COINS")   
-        button3 = types.KeyboardButton("BUY_ORDER") 
-        button4 = types.KeyboardButton("SELL_ORDER")
-        button5 = types.KeyboardButton("OPEN_ORDER")
-        button6 = types.KeyboardButton("CANCEL_ORDERS")
-        button7 = types.KeyboardButton("SELL_ALL_to")
-        button8 = types.KeyboardButton("SETTINGS") 
-        button9 = types.KeyboardButton("CASH FLOW")
-        button10 = types.KeyboardButton("BALANCE")
-        menu_markup.add(button1, button2, button3, button4, button5, button6, button7, button8, button9, button10)        
+        button2 = types.KeyboardButton("TOP_COINS")
+        button3 = types.KeyboardButton("GET LINK")  
+        button4 = types.KeyboardButton("FILTER")
+        button5 = types.KeyboardButton("RISK") 
+        button6 = types.KeyboardButton("BUY") 
+        button7 = types.KeyboardButton("SELL") 
+        button8 = types.KeyboardButton("TP")  
+        button9 = types.KeyboardButton("BUY+" )      
+        button10 = types.KeyboardButton("CANCEL_ORDERS")
+        button11 = types.KeyboardButton("SELL_ALL")         
+        button12 = types.KeyboardButton("BOOK")
+        button13 = types.KeyboardButton("BALANCE")
+        menu_markup.add(button1, button2, button3, button4, button5, button6, button7, button8, button9, button10, button11, button12, button13)        
         return menu_markup

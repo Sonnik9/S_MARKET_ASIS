@@ -11,7 +11,7 @@ class BASIC_PARAMETRS():
     def __init__(self):        
         self.SOLI_DEO_GLORIA = 'Soli Deo Gloria!'      
         self.market = 'spot'
-        self.test_flag = False
+        self.test_flag = True
         
     def init_api_key(self):
         self.tg_api_token = os.getenv("TG_API_TOKEN", "")
@@ -77,19 +77,8 @@ class FILTER_SET(TIME_TEMPLATES):
         self.min_volume_usdtFilter_flag = True
         self.MIN_VOLUM_USDT = 100000
 
-class OPEN_ORDER_PARAMS(FILTER_SET):
-    def __init__(self) -> None:
-        super().__init__()
-        self.get_balance_flag = False
-        self.buy_order_triger = False 
-        self.sell_order_triger = False
-        self.sell_all_orderS_triger = False
-        self.symbol = None       
-        self.depo = None        
-        self.DIVERCIFICATION_NUMDER = 9
-        self.info_triger = False
 
-class RISKK(OPEN_ORDER_PARAMS):
+class RISKK(FILTER_SET):
     def __init__(self) -> None:
         super().__init__()
         self.static_TP_flag = True        

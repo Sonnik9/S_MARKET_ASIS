@@ -5,6 +5,18 @@ import logging, os, inspect
 logging.basicConfig(filename='config_log.log', level=logging.INFO)
 current_file = os.path.basename(__file__)
 
+money_emoji = "💰"
+rocket_emoji = "🚀"
+lightning_emoji =  "⚡"
+clock_emoji = "⌚"
+film_emoji = "📼"
+percent_emoji = "📶"
+repeat_emoji = "🔁"
+upper_trigon_emoji = "🔼"
+lower_trigon_emoji = "🔽"
+confirm_emoji = "✅"
+link_emoji = "🔗"
+
 class TG_ASSISTENT(UTILS_APII):
 
     def __init__(self):
@@ -14,6 +26,7 @@ class TG_ASSISTENT(UTILS_APII):
         self.settings_2_redirect_flag = False
         self.order_triger = False
         self.open_order_redirect_flag = False
+        self.handle_getLink_redirect_flag = False
 
     def connector_func(self, message, response_message):
         retry_number = 3
@@ -34,35 +47,35 @@ class TG_ASSISTENT(UTILS_APII):
         item = {}  
         buy_order_returned_list = []
         try:
-            pass
-            # item["symbol"] = symbol
-            # item['in_position'] = False
-            # item['qnt'] = None 
-            # item["recalc_depo"] = None 
-            # item["price_precision"] = None 
-            # item["tick_size"] = None
-            # item["current_price"] = self.get_current_price(symbol)
-            # print(f'item["current_price"]: {item["current_price"]}')
+            # pass
+            item["symbol"] = symbol
+            item['in_position'] = False
+            item['qnt'] = None 
+            item["recalc_depo"] = None 
+            item["price_precision"] = None 
+            item["tick_size"] = None
+            item["current_price"] = self.get_current_price(symbol)
+            print(f'item["current_price"]: {item["current_price"]}')
             
-            # if self.atr_TP_flag:
-            #     timeframe = '15m'
-            #     limit = 100
-            #     m1_15_data = self.get_ccxtBinance_klines(self.symbol, timeframe, limit)            
-            #     m1_15_data['TR'] = abs(m1_15_data['High'] - m1_15_data['Low'])
-            #     m1_15_data['ATR'] = m1_15_data['TR'].rolling(window=14).mean()
-            #     item['atr'] = m1_15_data['ATR'].iloc[-1]
+            if self.atr_TP_flag:
+                timeframe = '15m'
+                limit = 100
+                m1_15_data = self.get_ccxtBinance_klines(self.symbol, timeframe, limit)            
+                m1_15_data['TR'] = abs(m1_15_data['High'] - m1_15_data['Low'])
+                m1_15_data['ATR'] = m1_15_data['TR'].rolling(window=14).mean()
+                item['atr'] = m1_15_data['ATR'].iloc[-1]
 
-            # item = self.make_market_order_temp_func(item, depo)
+            item = self.make_market_order_temp_func(item, depo)
 
-            # if item['in_position']:
-            #     buy_order_returned_list.append(1)
-            #     item = self.tp_make_orders(item)
-            #     if item["done_level"] == 2:
-            #         buy_order_returned_list.append(2)   
-            #     else:
-            #         buy_order_returned_list.append(-2) 
-            # else:
-            #     buy_order_returned_list.append(-1)
+            if item['in_position']:
+                buy_order_returned_list.append(1)
+                item = self.tp_make_orders(item)
+                if item["done_level"] == 2:
+                    buy_order_returned_list.append(2)   
+                else:
+                    buy_order_returned_list.append(-2) 
+            else:
+                buy_order_returned_list.append(-1)
 
         except Exception as ex:
             buy_order_returned_list.append(0)
@@ -107,79 +120,63 @@ class TG_MANAGER(TG_ASSISTENT):
         # ////////////////////////////////////////////////////////////////////////////////////////////////
             
         @self.bot.message_handler(func=lambda message: message.text == 'TOP_COINS')
-        def handle_restsrt(message): 
+        def handle_topCoins(message): 
             top_coins = None    
             response_message = "Please waiting..."
             message.text = self.connector_func(message, response_message)
             top_coins = self.assets_filters()
+            top_coins = [f"{link_emoji} https://www.coinglass.com/tv/Binance_{x}" for x in top_coins]
             response_message = ""
             if top_coins:
                 # response_message = str(top_coins)[2:-2].replace("', '", ', ')
-                response_message = ', '.join(top_coins)
+                response_message = money_emoji + '\n\n' + ', '.join(top_coins) + '\n\n' + money_emoji 
                 message.text = self.connector_func(message, response_message)
             else:
                 response_message = "Some problem with fetcing coins..."
                 message.text = self.connector_func(message, response_message)
 
+        # //////////////////////////////////////////////////////////////////////////////////////////////
 
-        # ////////////////////////////////////////////////////////////////////////////////////////////////
+        @self.bot.message_handler(func=lambda message: message.text == 'GET LINK')
+        def handle_getLink(message): 
+            top_coins = None    
+            response_message = "Please enter a symbol (e.g.: btcusdt)"
+            message.text = self.connector_func(message, response_message)
+            self.handle_getLink_redirect_flag = True
 
-        @self.bot.message_handler(func=lambda message: message.text == "SETTINGS")
-        def settingss(message):            
-            response_message = "Please select a settings options:\n1 - Testnet;" 
+        @self.bot.message_handler(func=lambda message: self.handle_getLink_redirect_flag)
+        def handle_getLink_redirect(message): 
+            symbol = None    
+            symbol = message.text.strip().upper()
+            response_message = money_emoji + '\n\n' + f"{link_emoji} https://www.coinglass.com/tv/Binance_{symbol}" + '\n\n' + money_emoji
+            message.text = self.connector_func(message, response_message)
+            self.handle_getLink_redirect_flag = False
+
+        # ////////////////////////////////////////////////////////////////////////////////////////////////    
+
+        @self.bot.message_handler(func=lambda message: message.text == "FILTER")
+        def handle_filter(message):            
+            response_message = "Please select a filter options..." 
             message.text = self.connector_func(message, response_message) 
-            self.settings_tg_flag = True
+            # self.handle_filter_flag = True
 
-        @self.bot.message_handler(func=lambda message: self.settings_tg_flag and message.text == "1")
-        def settingss_redirect_1(message):           
-            response_message = '1 - True;\n2 - False'
+        @self.bot.message_handler(func=lambda message: message.text == "RISK")
+        def handle_filter(message):            
+            response_message = "Please select a risk options..." 
             message.text = self.connector_func(message, response_message) 
-            self.settings_tg_flag = False
-            self.settings_1_redirect_flag = True
-
-        @self.bot.message_handler(func=lambda message: self.settings_1_redirect_flag)
-        def settingss_redirect_1_testnet(message): 
-            self.settings_1_redirect_flag = False          
-            if message.text.strip() == '1':
-                self.test_flag = True
-            elif message.text.strip() == '2':
-                self.test_flag = False
-            self.init_api_key()       
-            self.init_urls()
-            response_message = f'Testnet flag was chenged on {self.test_flag}'
-            message.text = self.connector_func(message, response_message)   
+            # self.handle_risk_flag = True
 
         # /////////////////////////////////////////////////////////////////////////////////
 
-        @self.bot.message_handler(func=lambda message: message.text == "BALANCE")
-        def get_balance(message):
-            get_balance1 = ''
-            get_balance2 = ''
-            response_message = "Please waiting..."
-            try:
-                message.text = self.connector_func(message, response_message)
-                resp_text = ""
-                get_balance1 = self.get_ccxtBinance_balance()           
-                # get_balance2 = self.get_balance()
-                resp_text = get_balance1 + '\n' + str(get_balance2)
-                response_message = f"Your {self.market.upper()} balance is:\n\n{resp_text}"
-                message.text = self.connector_func(message, response_message) 
-            except Exception as ex:
-                logging.exception(
-                    f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-                    
-        # ///////////////////////////////////////////////////////////////////////////////  
-
-        @self.bot.message_handler(func=lambda message: message.text == "BUY_ORDER")
-        def buy_order(message):             
-            response_message = "Please enter a coin and depo with a space (e.g.: btc 12)"
+        @self.bot.message_handler(func=lambda message: message.text == "BUY")
+        def handle_buyOrder(message):             
+            response_message = "Please enter a coin and depo/quantity with a space (e.g.: btc 12#_) or (e.g.: btc _#0.002)"
             message.text = self.connector_func(message, response_message)
             self.order_triger = True
             self.open_order_redirect_flag = True           
             
         @self.bot.message_handler(func=lambda message: self.open_order_redirect_flag)
-        def buy_order_redirect(message):
-
+        def handle_buyOrder_redirect(message):
             symbol = None 
             depo = None
             buy_order_returned_list = None
@@ -220,16 +217,46 @@ class TG_MANAGER(TG_ASSISTENT):
                 self.open_order_redirect_flag = True
 
         # /////////////////////////////////////////////////////////////////////////////////
+                
+        @self.bot.message_handler(func=lambda message: message.text == "SELL")
+        def handle_buyOrder(message):             
+            response_message = "Please enter a coin and quantity with a space (e.g.: btc 0.004)"
+            message.text = self.connector_func(message, response_message)
+            # self.order_triger = True
+            # self.sell_order_redirect_flag = True 
+
+        # /////////////////////////////////////////////////////////////////////////////////
             
 
-        # @self.bot.message_handler(func=lambda message: message.text == "INFO")
-        # def info_pos(message):               
-        #     response_message = "Please waiting..."
-        #     message.text = self.connector_func(message, response_message)
-        #     self.info_triger = True
+        @self.bot.message_handler(func=lambda message: message.text == "BOOK")
+        def handle_book(message):               
+            response_message = "Project in progress..."
+            message.text = self.connector_func(message, response_message)
+            # self.book_triger_flag = True
+
+
+        @self.bot.message_handler(func=lambda message: message.text == "BALANCE")
+        def handle_getBalance(message):
+            get_balance1 = ''
+            get_balance2 = ''
+            response_message = "Please waiting..."
+            try:
+                message.text = self.connector_func(message, response_message)
+                resp_text = ""
+                get_balance1 = self.get_ccxtBinance_balance()           
+                # get_balance2 = self.get_balance()
+                resp_text = get_balance1 + '\n' + str(get_balance2)
+                response_message = f"Your {self.market.upper()} balance is:\n\n{resp_text}"
+                message.text = self.connector_func(message, response_message) 
+            except Exception as ex:
+                logging.exception(
+                    f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+                    
+        # /////////////////////////////////////////////////////////////////////////////// 
+        # /////////////////////////////////////////////////////////////////////////////// 
             
         @self.bot.message_handler(func=lambda message: message.text not in self.reserved_frathes_list)
-        def exceptions_input(message):
+        def handle_exceptionsInput(message):
             response_message = f"Try again and enter a valid option."
             message.text = self.connector_func(message, response_message)                 
 
