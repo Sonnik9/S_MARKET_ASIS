@@ -59,133 +59,113 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
     
     # ///////////////////////////////////////////////////////////////////////////
 
-#     async def count_multipliter_places(self, number):
-#         if isinstance(number, (int, float)):
-#             number_str = str(number)
-#             if '.' in number_str:
-#                 return len(number_str.split('.')[1])
-#         return 0 
+    def count_multipliter_places(self, number):
+        if isinstance(number, (int, float)):
+            number_str = str(number)
+            if '.' in number_str:
+                return len(number_str.split('.')[1])
+        return 0 
     
-#     async def calc_qnt_func(self, symbol, price, depo): 
-#         symbol_info = None
-#         symbol_data = None 
-#         price_precision = None
-#         quantity_precision = None
-#         quantity = None  
-#         notional = None
-#         recalc_depo = None
-#         # min_qnt = None 
-        
-#         try:
-#             symbol_info = await self.get_excangeInfo(symbol)
-#         except Exception as ex:
-#             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
+    def calc_qnt_func(self, symbol, price, depo): 
+        symbol_info = None
+        symbol_data = None 
+        price_precision = None
+        quantity_precision = None
+        quantity = None  
+        notional = None
+        recalc_depo = None
+        # min_qnt = None 
+        if depo.endswith('USDT'):
+            depo = float(depo.replace('USDT', '').strip())
+            print(depo*2)
+        if depo.endswith(f"{symbol.replace('USDT', '').strip()}"):            
+            depo = depo.upper()
+            depo = float(depo.replace(f"{symbol.replace('USDT', '').strip()}", '').strip())
+            print(depo*2)
 
-#         if symbol_info:
-#             try:
-#                 symbol_data = next((item for item in symbol_info["symbols"] if item['symbol'] == symbol), None)
-#             except Exception as ex:
-#                 logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+        return
+        
+        # try:
+        #     symbol_info = self.get_excangeInfo(symbol)
+        # except Exception as ex:
+        #     logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
+
+        # if symbol_info:
+        #     try:
+        #         symbol_data = next((item for item in symbol_info["symbols"] if item['symbol'] == symbol), None)
+        #     except Exception as ex:
+        #         logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
             
-#         if symbol_data:   
-#             # print(symbol_data)         
-#             try:                
-#                 tick_size = float(symbol_data['filters'][0]["tickSize"])
-#                 price_precision = int(symbol_data['pricePrecision']) 
-#                 # print(f"price_precision: {price_precision}")           
-#                 quantity_precision = int(symbol_data['quantityPrecision']) 
-#                 lot_size_filter = next((item for item in symbol_data['filters'] if item['filterType'] == 'MIN_NOTIONAL'), None)  
-#                 notional = float(lot_size_filter.get('notional', None))
-#                 print(f"notional: {notional}")
+        # if symbol_data:   
+        #     print(symbol_data)         
+        #     try:                
+        #         tick_size = float(symbol_data['filters'][0]["tickSize"])
+        #         price_precision = int(symbol_data['pricePrecision']) 
+        #         # print(f"price_precision: {price_precision}")           
+        #         quantity_precision = int(symbol_data['quantityPrecision']) 
+        #         lot_size_filter = next((item for item in symbol_data['filters'] if item['filterType'] == 'MIN_NOTIONAL'), None)  
+        #         notional = float(lot_size_filter.get('notional', None))
+        #         print(f"notional: {notional}")
                 
-#             except Exception as ex:
-#                 logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+        #     except Exception as ex:
+        #         logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
         
-#             try:
-#                 tick_size = await self.count_multipliter_places(tick_size)
-#                 print(f"tick_size: {tick_size}")
-#             except Exception as ex:
-#                 logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}") 
+        #     try:
+        #         tick_size = self.count_multipliter_places(tick_size)
+        #         print(f"tick_size: {tick_size}")
+        #     except Exception as ex:
+        #         logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}") 
             
-#             try:  
-#                 if depo <= notional:
-#                     depo = notional  
-#                 quantity = round(depo / price, quantity_precision)
-#                 # quantity = round(depo / price, tick_size)
-#                 recalc_depo = quantity * price     
-#                 print(f"quantity: {quantity}")
-#                 # print(f"{symbol}:  {quantity, recalc_depo, price_precision, tick_size}")
-#             except Exception as ex:
-#                 logging.exception(f"An error occurred: {ex}")
+        #     try:  
+        #         if depo <= notional:
+        #             depo = notional  
+        #         quantity = round(depo / price, quantity_precision)
+        #         # quantity = round(depo / price, tick_size)
+        #         recalc_depo = quantity * price     
+        #         print(f"quantity: {quantity}")
+        #         # print(f"{symbol}:  {quantity, recalc_depo, price_precision, tick_size}")
+        #     except Exception as ex:
+        #         logging.exception(f"An error occurred: {ex}")
 
-#         return quantity, recalc_depo, price_precision, tick_size
+        # return quantity, recalc_depo, price_precision, tick_size
     
     
-# # ///////////////////////////////////////////////////////////////////////////////////
-#     async def make_market_order_temp_func(self, item):
-#         itemm = item.copy()
-#         atr_multipliter = self.atr_multipliter
-#         symbol = itemm["symbol"]
-#         defender = itemm["defender"]
-#         atr = itemm["atr"]
-#         entry_price = itemm["current_price"]
-#         try:
-#             changing_margin_type = await self.set_margin_type(symbol)
-#             print(changing_margin_type)
-#         except Exception as ex:
-#             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-        
-#         if not self.static_liver_flag:
-#             try:
-#                 lev_size = await self.calculate_leverage(entry_price, defender, atr, atr_multipliter)
-#             except Exception as ex:
-#                 logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-#         else:
-#             lev_size = self.leverage
+# ///////////////////////////////////////////////////////////////////////////////////
+    def buy_market_order_temp_func(self, item, depo):
+        itemm = item.copy()        
+        symbol = itemm["symbol"]        
+        atr = itemm["atr"]
+        entry_price = itemm["current_price"]
+        enter_deJure_price = itemm["current_price"]
 
-#         try:
-#             lev = await self.set_leverage(symbol, lev_size)     
-#             print(f"lev: {lev}")               
-#         except Exception as ex:
-#             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-#         if lev and 'leverage' in lev and lev['leverage'] == lev_size:
-#             enter_deJure_price = itemm["current_price"]
-#             try:                    
-#                 itemm['qnt'], itemm["recalc_depo"], itemm["price_precision"], itemm["tick_size"] = await self.calc_qnt_func(symbol, enter_deJure_price, self.depo)            
-#             except Exception as ex:
-#                 logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-#             print(f"itemm['qnt'] before: {itemm['qnt']}") 
-#             if itemm['qnt']:
-#                 # try:
-#                 #     itemm['qnt'] = self.transformed_qnt(itemm["symbol"], itemm['qnt'])
-#                 #     print(f"itemm['qnt'] transformed: {itemm['qnt']}") 
-#                 # except Exception as pe:
-#                 #     print(pe)
-#                 #     logging.warning(f"Precision error in transforming qnt: {pe}")
-#                 is_closing = 1
-#                 success_flag = False
-#                 market_type = 'MARKET'
-#                 target_price = None
-#                 try:          
-#                     open_market_order, success_flag = await self.make_order(itemm, is_closing, target_price, market_type)
-#                     print(f"open_market_order:  {open_market_order}") 
-#                 except Exception as ex:
-#                     logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-#                 if success_flag:                
-#                     try:
-#                         itemm["enter_deFacto_price"] = await self.get_DeFacto_price(symbol)
-#                         # print(f'str73 {symbol}:  {itemm["enter_deFacto_price"]}  (defacto_prtice)')
-#                         itemm["done_level"] = 1
-#                         itemm["in_position"] = True
-                        
-#                     except Exception as ex:
-#                         logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{open_market_order}")
+        try:                    
+            itemm['qnt'], itemm["recalc_depo"], itemm["price_precision"], itemm["tick_size"] = self.calc_qnt_func(symbol, enter_deJure_price, depo)            
+        except Exception as ex:
+            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+        print(f"{symbol}:\nitemm['qnt'] before: {itemm['qnt']}") 
+        if itemm['qnt']:
+            is_selling = 1
+            success_flag = False
+            market_type = 'MARKET'
+            target_price = None
+            try:          
+                open_market_order, success_flag = self.make_order(itemm, is_selling, target_price, market_type)
+                print(f"open_market_order:  {open_market_order}") 
+            except Exception as ex:
+                logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+            if success_flag:                
+                try:
+                    itemm["enter_deFacto_price"] = self.get_DeFacto_price(symbol)
+                    print(f'str73 {symbol}:  {itemm["enter_deFacto_price"]}  (defacto_prtice)')
+                    itemm["done_level"] = 1                                        
+                except Exception as ex:
+                    logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{open_market_order}")
 
-#         return itemm
+        return itemm
 
 #     async def tp_make_orders(self, item):
 #         itemm = item.copy()
-#         is_closing = -1
+#         is_selling = -1
 #         tp_price = None 
 #         sl_price = None
 
@@ -207,14 +187,14 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 #             print(f"target_price: {tp_price}")
 #             market_type = 'TAKE_PROFIT_MARKET' 
             
-#             open_static_tp_order, success_flag = await self.make_order(itemm, is_closing, tp_price, market_type)
+#             open_static_tp_order, success_flag = await self.make_order(itemm, is_selling, tp_price, market_type)
 #             print(f'open_static_tp_order  {open_static_tp_order}')
 
 #             if self.stopLoss_flag:
 #                 if success_flag:                           
 #                     success_flag = False               
 #                     market_type = 'STOP_MARKET'                                 
-#                     open_static_sl_order, success_flag = await self.make_order(itemm, is_closing, sl_price, market_type)
+#                     open_static_sl_order, success_flag = await self.make_order(itemm, is_selling, sl_price, market_type)
 #                     print(f'open_static_sl_order  {open_static_sl_order}')
 #                     if success_flag:                                     
 #                         itemm["done_level"] = 2   
@@ -299,7 +279,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 #                     })
 #         print(f"new_positions_data: {new_positions_data}")
                 
-#         is_closing = -1
+#         is_selling = -1
 #         target_price = None
 #         market_type = 'MARKET'
 #         close_resp_flag = False
@@ -307,7 +287,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 #             for item in new_positions_data:
 #                 close_resp_flag = False
 #                 try:
-#                     _, close_resp_flag = await self.make_order(item, is_closing, target_price, market_type)
+#                     _, close_resp_flag = await self.make_order(item, is_selling, target_price, market_type)
 #                 except:
 #                     pass
 #                 if close_resp_flag:
@@ -349,14 +329,14 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 #                     }
 #         print(f"new_positions_data: {new_positions_data}")
                 
-#         is_closing = -1
+#         is_selling = -1
 #         target_price = None
 #         market_type = 'MARKET'
 #         close_resp_flag = False
 #         if new_positions_data:            
 #             close_resp_flag = False
 #             try:
-#                 _, close_resp_flag = await self.make_order(new_positions_data, is_closing, target_price, market_type)
+#                 _, close_resp_flag = await self.make_order(new_positions_data, is_selling, target_price, market_type)
 #             except:
 #                 pass
 #             if close_resp_flag:
@@ -399,7 +379,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 # #         def try_to_close_by_market_open_position_by_stake(self, main_stake):
 
 # #         close_pos_by_market = None            
-# #         is_closing = -1
+# #         is_selling = -1
 # #         target_price = None
 # #         market_type = 'MARKET'
 # #         succes_closed_symbol_list = []
@@ -408,7 +388,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 # #         for item in main_stake:
 # #             success_flag = False
 # #             try:
-# #                 _, success_flag = self.make_order(item, is_closing, target_price, market_type)
+# #                 _, success_flag = self.make_order(item, is_selling, target_price, market_type)
                 
 # #                 if success_flag:
 # #                     succes_closed_symbol_list.append(item["symbol"])
@@ -427,7 +407,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 # #         all_positions = None   
 # #         succes_closed_symbol_list = []     
 # #         dont_closed_symbol_list = []    
-# #         is_closing = -1
+# #         is_selling = -1
 # #         target_price = None
 # #         market_type = 'MARKET'
 # #         all_openPos_symbols = []
@@ -445,7 +425,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 # #             # print(item)
 # #             if item["symbol"] in all_openPos_symbols:
 # #                 try:
-# #                     _, success_flag = self.make_order(item, is_closing, target_price, market_type)
+# #                     _, success_flag = self.make_order(item, is_selling, target_price, market_type)
 # #                     if success_flag:
 # #                         succes_closed_symbol_list.append(item["symbol"])
 # #                     else:

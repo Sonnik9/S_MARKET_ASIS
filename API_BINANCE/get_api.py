@@ -110,9 +110,10 @@ class GETT_API(GETT_API_CCXT):
     
 # ///////////////////////////////////////////////////////////////////
     def get_current_price(self, symbol):
+        
         method = 'GET'
         current_price = None
-        url = self.URL_PATTERN_DICT['current_ptice_url']
+        url = self.URL_PATTERN_DICT['current_price_url']
         params = {'symbol': symbol}
         print(f"symbol: {symbol}")
         try:

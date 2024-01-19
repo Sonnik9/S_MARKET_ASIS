@@ -43,41 +43,48 @@ class TG_ASSISTENT(UTILS_APII):
                    
         return None
     
+    def tp_order_tgButton_handler(self, symbol, target_price, qnt):
+        # item = self.tp_make_orders(item)
+        # if item["done_level"] == 1:
+        #     buy_order_returned_list.append(2)   
+        # else:
+        #     buy_order_returned_list.append(-2) 
+        pass
+    
     def buy_order_tgButton_handler(self, symbol, depo):
         item = {}  
         buy_order_returned_list = []
         try:
-            pass
-            # item["symbol"] = symbol
-            # item['in_position'] = False
-            # item['qnt'] = None 
-            # item["recalc_depo"] = None 
-            # item["price_precision"] = None 
-            # item["tick_size"] = None
-            # item["current_price"] = self.get_current_price(symbol)
-            # print(f'item["current_price"]: {item["current_price"]}')
+            # pass
+            item["symbol"] = symbol
+            item['is_selling'] = False
+            item['qnt'] = None 
+            item["recalc_depo"] = None 
+            item["price_precision"] = None 
+            item["tick_size"] = None
+            item["atr"] = None
+            item["current_price"] = self.get_current_price(symbol)
+            print(f'item["current_price"]: {item["current_price"]}')
             
-            # if self.atr_TP_flag:
-            #     timeframe = '15m'
-            #     limit = 100
-            #     m1_15_data = self.get_ccxtBinance_klines(self.symbol, timeframe, limit)            
-            #     m1_15_data['TR'] = abs(m1_15_data['High'] - m1_15_data['Low'])
-            #     m1_15_data['ATR'] = m1_15_data['TR'].rolling(window=14).mean()
-            #     item['atr'] = m1_15_data['ATR'].iloc[-1]
+            if self.atr_TP_flag:
+                timeframe = '15m'
+                limit = 100
+                m1_15_data = self.get_ccxtBinance_klines(symbol, timeframe, limit)            
+                m1_15_data['TR'] = abs(m1_15_data['High'] - m1_15_data['Low'])
+                m1_15_data['ATR'] = m1_15_data['TR'].rolling(window=14).mean()
+                item['atr'] = m1_15_data['ATR'].iloc[-1]
 
-            # item = self.make_market_order_temp_func(item, depo)
+            item = self.buy_market_order_temp_func(item, depo)
 
-            # if item['in_position']:
-            #     buy_order_returned_list.append(1)
-            #     item = self.tp_make_orders(item)
-            #     if item["done_level"] == 2:
-            #         buy_order_returned_list.append(2)   
-            #     else:
-            #         buy_order_returned_list.append(-2) 
-            # else:
-            #     buy_order_returned_list.append(-1)
+            if item["done_level"] == 1:
+                buy_order_returned_list.append(1)
+            else:
+                buy_order_returned_list.append(-1)
 
         except Exception as ex:
+            logging.exception(
+                f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+
             buy_order_returned_list.append(0)
             print(f"main121: {ex}")
 
@@ -170,7 +177,7 @@ class TG_MANAGER(TG_ASSISTENT):
 
         @self.bot.message_handler(func=lambda message: message.text == "BUY")
         def handle_buyOrder(message):             
-            response_message = "Please enter a coin and depo/quantity with a space (e.g.: btc 12#_) or (e.g.: btc _#0.002)"
+            response_message = "Please enter a coin and depo/quantity with a space (e.g.: btc 12usdt) or (e.g.: btc 0.002btc)"
             message.text = self.connector_func(message, response_message)
             self.order_triger = True
             self.open_order_redirect_flag = True           
@@ -179,12 +186,13 @@ class TG_MANAGER(TG_ASSISTENT):
         def handle_buyOrder_redirect(message):
             symbol = None 
             depo = None
+
             buy_order_returned_list = None
             order_tg_reply = ""
             
             try:              
-                symbol = message.text.split(' ')[0].strip().upper() + 'USDT'       
-                depo = float(message.text.split(' ')[1].strip())
+                symbol = message.text.split(' ')[0].strip().upper() + 'USDT'     
+                depo = message.text.split(' ')[1].strip().upper()
                 response_message = "Please waiting..."
                 message.text = self.connector_func(message, response_message)
                 # ///////////////////////////////////////////////////////////
@@ -192,19 +200,18 @@ class TG_MANAGER(TG_ASSISTENT):
 
                 if buy_order_returned_list:
                     if 0 in buy_order_returned_list[0]:
-                        order_tg_reply += "Some exceptions with placeing order..." + '\n'
-                        
+                        order_tg_reply += "Some exceptions with placeing order..." + '\n'                        
                     if -1 in buy_order_returned_list[0]:
                         order_tg_reply += "Some problem with placeing order..." + '\n'
                         message.text = self.connector_func(message, order_tg_reply)
-                    if -2 in buy_order_returned_list[0]:
-                        order_tg_reply = "Some problem with setting takeProfit..." + '\n'
-                        message.text += self.connector_func(message, order_tg_reply)
+                    # if -2 in buy_order_returned_list[0]:
+                    #     order_tg_reply = "Some problem with setting takeProfit..." + '\n'
+                    #     message.text += self.connector_func(message, order_tg_reply)
                     if 1 in buy_order_returned_list[0]:
                         order_tg_reply += "The order was created successuly!" + '\n'
                         message.text = self.connector_func(message, order_tg_reply)
-                    if 2 in buy_order_returned_list[0]:
-                        order_tg_reply += "The takeProfit was setting successuly!" + '\n'
+                    # if 2 in buy_order_returned_list[0]:
+                    #     order_tg_reply += "The takeProfit was setting successuly!" + '\n'
                 else:
                     order_tg_reply += "Some exceptions with placeing order..."
 
