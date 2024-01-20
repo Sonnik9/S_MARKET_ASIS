@@ -171,51 +171,31 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 
         return itemm
 
-#     async def tp_make_orders(self, item):
-#         itemm = item.copy()
-#         is_selling = -1
-#         tp_price = None 
-#         sl_price = None
-
-#         try:           
-#             success_flag = False   
-#             tp_ratio = self.TP_rate
-#             sl_ratio = self.SL_ratio
-#             tp_price, sl_price = await self.static_tp_calc(itemm, tp_ratio, sl_ratio)
-            
-#             print(f"target_TPprice before transformed: {tp_price}")
-#             # try:
-#             #     target_price = self.transformed_price(itemm["symbol"], target_price)
-#             #     print(f"target_price transformed: {target_price}")
-#             # except Exception as pe:
-#             #     print(pe)
-#             #     logging.warning(f"Precision error in transforming price: {pe}")
-
-            
-#             print(f"target_price: {tp_price}")
-#             market_type = 'TAKE_PROFIT_MARKET' 
-            
-#             open_static_tp_order, success_flag = await self.make_order(itemm, is_selling, tp_price, market_type)
-#             print(f'open_static_tp_order  {open_static_tp_order}')
-
-#             if self.stopLoss_flag:
-#                 if success_flag:                           
-#                     success_flag = False               
-#                     market_type = 'STOP_MARKET'                                 
-#                     open_static_sl_order, success_flag = await self.make_order(itemm, is_selling, sl_price, market_type)
-#                     print(f'open_static_sl_order  {open_static_sl_order}')
-#                     if success_flag:                                     
-#                         itemm["done_level"] = 2   
-
-#             else:
-#                 if success_flag:                                     
-#                     itemm["done_level"] = 2 
-
+    def tp_make_orders(self, symbol, depo, enter_price, target_prices, auto_flag):
+        item = {}
+        market_type = 'LIMIT'
+        is_selling = -1
+        tp_price = None 
+        success_flag = False
+        item["symbol"] = symbol
         
-#         except Exception as ex:
-#             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{open_static_tp_order}")
+        
+        try:           
+            success_flag = False   
+            tp_ratio = self.TP_rate
+            if auto_flag:
+                tp_price = self.static_tp_calc(enter_price, tp_ratio)
+                print(f"target_price: {tp_price}")  
+                target_price = target_prices[0]       
+                open_static_tp_order, success_flag = self.make_order(item, is_selling, tp_price, market_type)
+                print(f'open_static_tp_order  {open_static_tp_order}')
 
-#         return itemm 
+            if success_flag:                                     
+                item["done_level"] = 2     
+        except Exception as ex:
+            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{open_static_tp_order}")
+
+        return item
     
 #     # ///////////////////////////////////////////////////////////////////////////////
 #     async def positions_info(self):

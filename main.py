@@ -23,10 +23,12 @@ class TG_ASSISTENT(UTILS_APII):
         super().__init__()
         self.settings_tg_flag = False
         self.settings_1_redirect_flag = False
-        self.settings_2_redirect_flag = False
-        self.order_triger = False
+        self.settings_2_redirect_flag = False        
         self.open_order_redirect_flag = False
         self.handle_getLink_redirect_flag = False
+        self.tp_order_redirect_flag = False
+        self.tp_order_auto_redirect_flag = False
+        self.tp_order_custom_redirect_flag = False
 
     def connector_func(self, message, response_message):
         retry_number = 3
@@ -43,13 +45,16 @@ class TG_ASSISTENT(UTILS_APII):
                    
         return None
     
-    def tp_order_tgButton_handler(self, symbol, target_price, qnt):
-        # item = self.tp_make_orders(item)
-        # if item["done_level"] == 1:
-        #     buy_order_returned_list.append(2)   
-        # else:
-        #     buy_order_returned_list.append(-2) 
-        pass
+    def tp_order_tgButton_handler(self, symbol, depo, enter_price, target_prices):
+        tp_response = None
+        tp_tg_response = None
+        tp_response = self.tp_make_orders(symbol, depo, enter_price, target_prices)
+        if tp_response["done_level"] == 2:
+            tp_tg_response = "Take profit was created succesfully!"
+        else:
+            tp_tg_response = "Some problem with creating tpOrder..."
+
+        return tp_tg_response
     
     def buy_order_tgButton_handler(self, symbol, depo, is_selling):
         item = {}  
@@ -89,7 +94,7 @@ class TG_ASSISTENT(UTILS_APII):
             buy_order_returned_list.append(0)
             print(f"main121: {ex}")
 
-        return buy_order_returned_list
+        return buy_order_returned_list, item['enter_deFacto_price']
     
     def closePos_template(self, success_closePosition_list, problem_closePosition_list, cancel_orders_list, unSuccess_cancel_orders_list, close_tg_reply):
         try:
@@ -178,9 +183,8 @@ class TG_MANAGER(TG_ASSISTENT):
 
         @self.bot.message_handler(func=lambda message: message.text == "BUY" or message.text == "SELL")
         def handle_buyOrder(message):             
-            response_message = "Please enter a coin and depo/quantity, direction and marketType with a space (e.g.: btc 12usdt 1) or (e.g.: btc 0.002btc -1)"
-            message.text = self.connector_func(message, response_message)
-            self.order_triger = True
+            response_message = "Please enter a coin and depo/quantity, direction with a space (e.g.: btc 12usdt 1) or (e.g.: btc 0.002btc -1)"
+            message.text = self.connector_func(message, response_message)           
             self.open_order_redirect_flag = True           
             
         @self.bot.message_handler(func=lambda message: self.open_order_redirect_flag)
@@ -197,9 +201,10 @@ class TG_MANAGER(TG_ASSISTENT):
                 depo = message.text.split(' ')[1].strip().upper()
                 is_selling = int(message.text.split(' ')[2].strip().upper())
                 response_message = "Please waiting..."
+                self.open_order_redirect_flag = False
                 message.text = self.connector_func(message, response_message)
                 # ///////////////////////////////////////////////////////////
-                buy_order_returned_list = self.buy_order_tgButton_handler(symbol, depo, is_selling)
+                buy_order_returned_list, enter_deFacto_price = self.buy_order_tgButton_handler(symbol, depo, is_selling)
 
                 if buy_order_returned_list:
                     if is_selling == 1:
@@ -211,13 +216,11 @@ class TG_MANAGER(TG_ASSISTENT):
                     if -1 in buy_order_returned_list:
                         order_tg_reply += f"Some problem with placeing {order_esential} order..." + '\n'
                     if 1 in buy_order_returned_list:
-                        order_tg_reply += f"The {order_esential} order was executed successfully" + '\n'
+                        order_tg_reply += f"The {order_esential} order was executed successfully. Enter price = {enter_deFacto_price}" + '\n'
                 else:
                     order_tg_reply += f"Some exceptions with placeing {order_esential} order..."
 
-                message.text = self.connector_func(message, order_tg_reply)
-                self.open_order_redirect_flag = False
-                
+                message.text = self.connector_func(message, order_tg_reply)               
             except Exception as ex:
                 logging.exception(
                     f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
@@ -226,6 +229,50 @@ class TG_MANAGER(TG_ASSISTENT):
                 self.open_order_redirect_flag = True
 
         # /////////////////////////////////////////////////////////////////////////////////
+                
+        @self.bot.message_handler(func=lambda message: message.text == "TP")
+        def handle_tpOrder(message):   
+            response_message = "Please select an option:\n1 - Auto;\n2 - Current"        
+            message.text = self.connector_func(message, response_message)            
+            self.tp_order_redirect_flag = True   
+
+        @self.bot.message_handler(func=lambda message: self.tp_order_redirect_flag)
+        def handle_tpOrder_redirect(message): 
+            self.tp_order_redirect_flag = False  
+            print(message.text)
+            response_message = ""
+            if message.text == '1':
+                response_message = "Please enter a coin and depo/quantity and enterPrice with a space (e.g.: btc 12usdt 43000) or (e.g.: btc 0.002btc 44000)"
+                      
+            elif message.text == '2':
+                response_message = "Please enter a coin, depo/quantity and target prices with a space (e.g.: btc 12usdt 45500) or (e.g.: btc 0.002btc 45500 46500 47500)"
+            self.tp_order_auto_redirect_flag = True
+            message.text = self.connector_func(message, response_message)
+
+        @self.bot.message_handler(func=lambda message: self.tp_order_auto_redirect_flag)
+        def handle_tpOrder_redirect_auto(message): 
+            print('bndgjklb nadgjklbn') 
+            response_message = ""
+            symbol = 0
+            depo = 0
+            target_prices = []   
+            try:
+                symbol = message.text.split(' ')[0].strip().upper() + 'USDT'     
+                depo = message.text.split(' ')[1].strip().upper()  
+                enter_price = float(message.text.split(' ')[2].strip())            
+                response_message = "Please waiting..."
+                self.tp_order_auto_redirect_flag = False 
+                message.text = self.connector_func(message, response_message)    
+                tp_response = self.tp_order_tgButton_handler(symbol, depo, enter_price, target_prices)
+                response_message = tp_response             
+                message.text = self.connector_func(message, response_message)   
+            except Exception as ex:
+                logging.exception(
+                    f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+                response_message = "Please enter a valid data and chaking of another details. Then try again (e.g.: btc 9)"
+                message.text = self.connector_func(message, response_message)
+                self.tp_order_auto_redirect_flag = True        
+            
 
         # /////////////////////////////////////////////////////////////////////////////////
             

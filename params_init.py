@@ -82,7 +82,7 @@ class RISKK(FILTER_SET):
         super().__init__()
         self.static_TP_flag = True        
         self.SL_ratio = 3  # % 
-        self.tp_coeff = 1.3
+        self.tp_coeff = 15
         # /////////////////////////////////////////        
         self.atr_TP_coef = 0.9
         self.atr_TP_flag = False
