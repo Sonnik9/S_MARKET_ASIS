@@ -51,18 +51,19 @@ class TG_ASSISTENT(UTILS_APII):
         #     buy_order_returned_list.append(-2) 
         pass
     
-    def buy_order_tgButton_handler(self, symbol, depo):
+    def buy_order_tgButton_handler(self, symbol, depo, is_selling):
         item = {}  
         buy_order_returned_list = []
         try:
             # pass
             item["symbol"] = symbol
-            item['is_selling'] = False
+            item['is_selling'] = is_selling
             item['qnt'] = None 
             item["recalc_depo"] = None 
             item["price_precision"] = None 
             item["tick_size"] = None
             item["atr"] = None
+            item["done_level"] = None
             item["current_price"] = self.get_current_price(symbol)
             print(f'item["current_price"]: {item["current_price"]}')
             
@@ -74,7 +75,7 @@ class TG_ASSISTENT(UTILS_APII):
                 m1_15_data['ATR'] = m1_15_data['TR'].rolling(window=14).mean()
                 item['atr'] = m1_15_data['ATR'].iloc[-1]
 
-            item = self.buy_market_order_temp_func(item, depo)
+            item = self.buy_market_order_temp_func(item, depo, is_selling)
 
             if item["done_level"] == 1:
                 buy_order_returned_list.append(1)
@@ -175,9 +176,9 @@ class TG_MANAGER(TG_ASSISTENT):
 
         # /////////////////////////////////////////////////////////////////////////////////
 
-        @self.bot.message_handler(func=lambda message: message.text == "BUY")
+        @self.bot.message_handler(func=lambda message: message.text == "BUY" or message.text == "SELL")
         def handle_buyOrder(message):             
-            response_message = "Please enter a coin and depo/quantity with a space (e.g.: btc 12usdt) or (e.g.: btc 0.002btc)"
+            response_message = "Please enter a coin and depo/quantity, direction and marketType with a space (e.g.: btc 12usdt 1) or (e.g.: btc 0.002btc -1)"
             message.text = self.connector_func(message, response_message)
             self.order_triger = True
             self.open_order_redirect_flag = True           
@@ -186,51 +187,45 @@ class TG_MANAGER(TG_ASSISTENT):
         def handle_buyOrder_redirect(message):
             symbol = None 
             depo = None
+            order_esential = "ABRAKADABRA"
 
-            buy_order_returned_list = None
+            buy_order_returned_list = []
             order_tg_reply = ""
             
             try:              
                 symbol = message.text.split(' ')[0].strip().upper() + 'USDT'     
                 depo = message.text.split(' ')[1].strip().upper()
+                is_selling = int(message.text.split(' ')[2].strip().upper())
                 response_message = "Please waiting..."
                 message.text = self.connector_func(message, response_message)
                 # ///////////////////////////////////////////////////////////
-                buy_order_returned_list = self.buy_order_tgButton_handler(symbol, depo)
+                buy_order_returned_list = self.buy_order_tgButton_handler(symbol, depo, is_selling)
 
                 if buy_order_returned_list:
-                    if 0 in buy_order_returned_list[0]:
-                        order_tg_reply += "Some exceptions with placeing order..." + '\n'                        
-                    if -1 in buy_order_returned_list[0]:
-                        order_tg_reply += "Some problem with placeing order..." + '\n'
-                        message.text = self.connector_func(message, order_tg_reply)
-                    # if -2 in buy_order_returned_list[0]:
-                    #     order_tg_reply = "Some problem with setting takeProfit..." + '\n'
-                    #     message.text += self.connector_func(message, order_tg_reply)
-                    if 1 in buy_order_returned_list[0]:
-                        order_tg_reply += "The order was created successuly!" + '\n'
-                        message.text = self.connector_func(message, order_tg_reply)
-                    # if 2 in buy_order_returned_list[0]:
-                    #     order_tg_reply += "The takeProfit was setting successuly!" + '\n'
+                    if is_selling == 1:
+                        order_esential = 'BUY'
+                    elif is_selling == -1:
+                        order_esential = 'SELL'
+                    if 0 in buy_order_returned_list:
+                        order_tg_reply += f"Some exceptions with placeing {order_esential} order..." + '\n'                        
+                    if -1 in buy_order_returned_list:
+                        order_tg_reply += f"Some problem with placeing {order_esential} order..." + '\n'
+                    if 1 in buy_order_returned_list:
+                        order_tg_reply += f"The {order_esential} order was executed successfully" + '\n'
                 else:
-                    order_tg_reply += "Some exceptions with placeing order..."
+                    order_tg_reply += f"Some exceptions with placeing {order_esential} order..."
 
                 message.text = self.connector_func(message, order_tg_reply)
                 self.open_order_redirect_flag = False
                 
-            except:
-                response_message = "Please enter a valid data. Try again (e.g.: btc 9)"
+            except Exception as ex:
+                logging.exception(
+                    f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+                response_message = "Please enter a valid data and chaking of another details. Then try again (e.g.: btc 9)"
                 message.text = self.connector_func(message, response_message)
                 self.open_order_redirect_flag = True
 
         # /////////////////////////////////////////////////////////////////////////////////
-                
-        @self.bot.message_handler(func=lambda message: message.text == "SELL")
-        def handle_buyOrder(message):             
-            response_message = "Please enter a coin and quantity with a space (e.g.: btc 0.004)"
-            message.text = self.connector_func(message, response_message)
-            # self.order_triger = True
-            # self.sell_order_redirect_flag = True 
 
         # /////////////////////////////////////////////////////////////////////////////////
             

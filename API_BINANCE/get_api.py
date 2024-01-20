@@ -129,14 +129,18 @@ class GETT_API(GETT_API_CCXT):
 # ///////////////////////////////////////////////////////////////////////////////////////   
         
     def get_DeFacto_price(self, symbol):       
+        try:
+            positions = None        
+            url = self.URL_PATTERN_DICT['positions_url']
+            params = {}
+            params = self.get_signature(params)
+            positions = self.HTTP_request(url, method=method, headers=self.header, params=params)
+            print(positions)
+            
+            positions = float([x for x in positions if x['symbol'] == symbol][0]["entryPrice"])
+        except Exception as ex:
+            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
 
-        positions = None        
-        url = self.URL_PATTERN_DICT['positions_url']
-        params = {}
-        params = self.get_signature(params)
-        positions = self.HTTP_request(url, method=method, headers=self.header, params=params)
-        
-        positions = float([x for x in positions if x['symbol'] == symbol][0]["entryPrice"])
 
         return positions
     

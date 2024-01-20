@@ -1,6 +1,0 @@
-ERROR:root:An error occurred in file 'main.py', line 86: 'TG_MANAGER' object has no attribute 'atr_TP_flag'
-Traceback (most recent call last):
-  File "/home/kali/Desktop/ALL_PROJECT/TREADING/SPOT_MARKET_ASSISTENT/main.py", line 69, in buy_order_tgButton_handler
-    if self.atr_TP_flag:
-       ^^^^^^^^^^^^^^^^
-AttributeError: 'TG_MANAGER' object has no attribute 'atr_TP_flag'

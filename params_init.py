@@ -32,14 +32,13 @@ class URL_TEMPLATES(BASIC_PARAMETRS):
             self.URL_PATTERN_DICT['current_price_url'] = "https://api.binance.com/api/v3/ticker/price"
             self.URL_PATTERN_DICT['all_tikers_url'] = "https://api.binance.com/api/v3/ticker/24hr"
             self.URL_PATTERN_DICT['create_order_url'] = 'https://api.binance.com/api/v3/order'
-            self.URL_PATTERN_DICT['exchange_info_url'] = 'https://api.binance.com/api/v3/exchangeInfo'
+            self.URL_PATTERN_DICT['exchangeInfo_url'] = 'https://api.binance.com/api/v3/exchangeInfo'
             self.URL_PATTERN_DICT['balance_url'] = 'https://api.binance.com/api/v3/account'
             self.URL_PATTERN_DICT['get_all_orders_url'] = 'https://api.binance.com/api/v3/openOrders'
             self.URL_PATTERN_DICT['cancel_all_orders_url'] = 'https://api.binance.com/api/v3/openOrders'
-            self.URL_PATTERN_DICT['positions_url'] = 'https://api.binance.com/api/v3/account'
-            self.URL_PATTERN_DICT["set_leverage_url"] = 'https://api.binance.com/api/v3/leverage'
+            self.URL_PATTERN_DICT['positions_url'] = 'https://api.binance.com/api/v3/account'            
             self.URL_PATTERN_DICT["klines_url"] = 'https://api.binance.com/api/v3/klines'
-            self.URL_PATTERN_DICT["set_margin_type_url"] = 'https://api.binance.com/api/v3/marginType'
+            
 
         else:
             self.market = 'futures'
@@ -86,6 +85,7 @@ class RISKK(FILTER_SET):
         self.tp_coeff = 1.3
         # /////////////////////////////////////////        
         self.atr_TP_coef = 0.9
+        self.atr_TP_flag = False
         
     def risk_init(self):
         if self.static_TP_flag:

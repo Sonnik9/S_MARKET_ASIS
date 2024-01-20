@@ -17,7 +17,7 @@ class POSTT_API(GETT_API):
         try:
             url = self.URL_PATTERN_DICT['create_order_url']
             params = {}        
-            params["symbol"] = item["symbol"] + 'USDT'       
+            params["symbol"] = item["symbol"]     
             params["type"] = market_type
             params["quantity"] = item['qnt']
         
@@ -34,7 +34,7 @@ class POSTT_API(GETT_API):
             params = self.get_signature(params)
             response = self.HTTP_request(url, method=method, headers=self.header, params=params)
             print(response)
-            if response and 'status' in response and response['status'] == 'NEW':
+            if response and 'clientOrderId' in response and response['side'] == side:
                 success_flag = True
         except Exception as ex:
             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
