@@ -292,7 +292,8 @@ class TG_MANAGER(TG_ASSISTENT):
             try:
                 message.text = self.connector_func(message, response_message)
                 resp_text = ""
-                get_balance1 = self.get_ccxtBinance_balance()           
+                get_balance1 = self.get_ccxtBinance_balance()  
+                # get_balance1 = self.get_balance()           
                 # get_balance2 = self.get_balance()
                 resp_text = get_balance1 + '\n' + str(get_balance2)
                 response_message = f"Your {self.market.upper()} balance is:\n\n{resp_text}"

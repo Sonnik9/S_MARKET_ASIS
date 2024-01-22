@@ -5,6 +5,8 @@ import pandas as pd
 import asyncio
 import time
 from connectorss import CONNECTOR_TG
+import csv
+import json
 
 import logging, os, inspect
 
@@ -16,21 +18,168 @@ method = 'GET'
 
 class GETT_API_CCXT(CONNECTOR_TG):
     def __init__(self):   
-        super().__init__()  
+        super().__init__()
 
-    def get_ccxtBinance_balance(self):
+    # def format_and_write_trades_json(self, data, symbol):
         
-        liq = None
+    #     output_file=f'{symbol}_tradesBook.json'
+    #     sorted_data = sorted(data, key=lambda x: x['timestamp'])
+
+    #     # Создание и запись в файл
+    #     formatted_trades = []
+
+    #     for trade in sorted_data:
+    #         ticker = trade['symbol']
+    #         timestamp_ms = trade['timestamp']
+    #         date = datetime.utcfromtimestamp(timestamp_ms / 1000).strftime('%Y-%m-%d %H:%M:%S')
+    #         amount = trade['amount']
+    #         usdt_amount = trade['cost']
+    #         side = 'Buy' if trade['side'] == 'buy' else 'Sell'
+    #         price = trade['price']
+    #         commission = trade['fee']['cost']
+
+    #         # Формирование словаря
+    #         formatted_trade = {
+    #             'Ticker': ticker,
+    #             'Date': date,
+    #             'Amount': amount,
+    #             'USDT Amount': usdt_amount,
+    #             'Commission': commission,
+    #             'Side': side,
+    #             'Price': price
+    #         }
+
+    #         formatted_trades.append(formatted_trade)
+
+    #     with open(output_file, 'w') as json_file:
+    #         json.dump(formatted_trades, json_file, indent=2)
+
+    # def format_and_write_trades(self, data, symbol):
+    #     output_file = f'{symbol}_tradesBook.csv'
+    #     sorted_data = sorted(data, key=lambda x: x['timestamp'])
+
+    #     with open(output_file, mode='w', newline='') as file:
+    #         writer = csv.writer(file)
+    #         writer.writerow(['Ticker', 'Date', 'Amount', 'USDT Amount', 'Commission', 'Side', 'Price'])
+
+    #         for trade in sorted_data:
+    #             ticker = trade['symbol']
+    #             timestamp_ms = trade['timestamp']
+    #             date = datetime.utcfromtimestamp(timestamp_ms / 1000).strftime('%Y-%m-%d %H:%M:%S')
+    #             amount = trade['amount']
+    #             usdt_amount = trade['cost']
+    #             side = 'Buy' if trade['side'] == 'buy' else 'Sell'
+    #             price = trade['price']
+    #             commission = trade['fee']['cost']
+    #             writer.writerow([ticker, date, amount, usdt_amount, commission, side, price])
+
+    def calculate_profit_and_balance_json(self, data):
+
+        
+        sorted_data = sorted(data, key=lambda x: x['timestamp'])
+
+        formatted_trades = []
+
+        # Переменные для бухгалтерских расчетов
+        total_buy_amount = 0
+        total_buy_cost = 0
+        average_buy_price = 0
+        total_profit = 0
+        balance = 0
+        total_balance = ''
+       
+
+        for i, trade in enumerate(sorted_data):
+            profit = 0
+            ticker = trade['symbol']
+            timestamp_ms = trade['timestamp']
+            date = datetime.utcfromtimestamp(timestamp_ms / 1000).strftime('%Y-%m-%d %H:%M:%S')
+            amount = trade['amount']
+            usdt_amount = trade['cost']
+            side = 'Buy' if trade['side'] == 'buy' else 'Sell'
+            price = trade['price']
+            commission = trade['fee']['cost']
+
+            if side == 'Buy':
+                total_buy_amount += amount
+                balance += amount
+                total_buy_cost += usdt_amount
+                average_buy_price = total_buy_cost / total_buy_amount
+
+            elif side == 'Sell':
+                profit = (amount * price) - commission - (amount * average_buy_price)
+                balance -= amount
+
+            if profit !=0:
+                total_profit += profit
+            else:
+                profit = ''
+
+            if i == len(sorted_data) - 1:
+                total_balance = balance 
+                total_total_profit = total_profit
+            else:
+                total_balance = ''
+                total_total_profit = ''
+
+
+            if balance >0:
+                formatted_trade = {
+                    'Ticker': ticker,
+                    'Date': date,
+                    'Amount': amount,
+                    'USDT Amount': usdt_amount,
+                    'Commission': commission,
+                    'Side': side,
+                    'Price': price,
+                    'Profit': profit,
+                    'Total_profit': total_total_profit,
+                    'Balance': total_balance
+                }
+                formatted_trades.append(formatted_trade)
+            else:
+                # balance += amount
+                pass
+
+
+        return formatted_trades
+
+
+
+
+
+
+    def get_myBook(self, symbol):
+        formatted_trades = None
+        try:
+            self.exchange.fetch_total_balance()
+            trades_data = self.exchange.fetch_my_trades(symbol)
+            # self.format_and_write_trades(trades_data, symbol)
+            # self.format_and_write_trades_json(trades_data, symbol)
+            formatted_trades = self.calculate_profit_and_balance_json(trades_data)
+            output_file=f'{symbol}_tradesBook.json'
+            with open(output_file, 'w') as json_file:
+                json.dump(formatted_trades, json_file, indent=2)
+            
+            return True
+        except Exception as ex:
+            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+
+        return False
+        
+
+    def get_ccxtBinance_balance(self):       
+        bal = None
         retry_number = 3
         decimal = 1.1        
         for i in range(retry_number):
             try:
-                liq = self.exchange.fetch_total_balance()
-                if liq:
-                    liq = [f"{key}: {value}" for key, value in liq.items() if float(value) !=0]
-                if liq:
-                    liq = '\n'.join(liq)
-                    return liq
+                bal = self.exchange.fetch_total_balance()
+                if bal:
+                    bal = [f"{key}: {value}" for key, value in bal.items() if float(value) !=0]
+                if bal:
+                    bal = '\n'.join(bal)
+                    return bal
                 return "Balance==0"
             except Exception as ex:
                 logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
@@ -56,6 +205,22 @@ class GETT_API_CCXT(CONNECTOR_TG):
                 time.sleep(1.1 + i*decimal)     
 
         return pd.DataFrame()
+
+    # def get_ccxtBinance_curPrice(self, symbol):
+    #     retry_number = 3
+    #     decimal = 1.1  
+    #     print(symbol)  
+    # #    symbol = 'BNB/USDT'    
+    #     for i in range(retry_number):
+    #         try:
+    #             ticker = self.exchange.fetch_ticker(symbol)
+    #             last_price = ticker['last']                
+    #             return last_price
+    #         except Exception as e:
+    #             print(f"Error fetching ticker: {e}")
+    #             time.sleep(1.1 + i * decimal)     
+
+    #     return 'Some problems with fetching last price'
     
     # def transformed_qnt(self, symbol, amount):
         
@@ -92,26 +257,39 @@ class GETT_API(GETT_API_CCXT):
         exchangeInfo = self.HTTP_request(url, method=method, headers=self.header)
 
         return exchangeInfo
-    
-    def get_balance(self):
-       
-        current_balance = None 
-        url = self.URL_PATTERN_DICT['balance_url']        
-        params = {}
-        params['recvWindow'] = 5000
-        params = self.get_signature(params)
-        current_balance = self.HTTP_request(url, method=method, headers=self.header, params=params)
-              
-        current_balance = dict(current_balance)                
-        current_balanceE = current_balance['balances']
-        current_balance = [(x['free'], x['locked']) for x in current_balanceE if x['asset'] == 'USDT'][0]
 
-        return current_balance
+    # def get_balance(self):
+        
+    #     bal = None
+    #     retry_number = 3
+    #     decimal = 1.1     
+        
+    #     url = self.URL_PATTERN_DICT['balance_url']        
+    #     params = {}
+    #     params['recvWindow'] = 5000   
+    #     for i in range(retry_number):
+    #         try:
+    #             params = self.get_signature(params)
+    #             bal = self.HTTP_request(url, method=method, headers=self.header, params=params)             
+    #             bal = bal['balances']        
+    #             if bal:
+    #                 bal = [f"{x['asset']}: {x['free']}" for x in bal if float(x['free']) != 0]
+    #             if bal:
+    #                 bal = '\n'.join(bal)
+    #                 return bal
+    #             return "Balance==0"
+    #         except Exception as ex:
+    #             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+    #             time.sleep(1.1 + i*decimal)     
+
+    #     return "Some problem with fetching balance..."
     
-# ///////////////////////////////////////////////////////////////////
+    
+    # ///////////////////////////////////////////////////////////////////
     def get_current_price(self, symbol):
         
         method = 'GET'
+        
         current_price = None
         url = self.URL_PATTERN_DICT['current_price_url']
         params = {'symbol': symbol}
@@ -158,39 +336,11 @@ class GETT_API(GETT_API_CCXT):
     
 # //////////////////////////////////////////////////////////////////////////////////
 
-# get_apii = GETT_API()
+get_apii = GETT_API()
+symbol = 'BTCUSDT'
+print(get_apii.get_myBook(symbol))
 # symbol = 'BNBUSDT'
-# symbol = 'SOLUSDT'
-# klines = asyncio.run(get_apii.get_klines(symbol, '1m', 30))
-# print(klines)
-# klines = asyncio.run(get_apii.get_ccxtBinance_klines(symbol, '1m', 30))
-# print(klines)
-# price = asyncio.run(get_apii.get_current_price(symbol))
-# open_pos = asyncio.run(get_apii.get_open_positions())
-# print(open_pos)
-# print(price)
+# print(get_apii.get_current_price(symbol))
+# print(get_apii.get_ccxtBinance_curPrice(symbol))
 
-
-# # # python -m API_BINANCE.get_api
-    
-
-# symbol = 'BNBUSDT'  # Replace with the symbol you're interested in
-# timeframe = '1m'  # You can change the timeframe (e.g., '5m', '1h', '1d')
-
-# binance_fetcher = BinanceDataFetcher()
-# klines_data = binance_fetcher.get_ccxtBinance_klines(symbol, timeframe, limit=11)
-
-# # # Display the fetched data
-# print(klines_data)
-
-
-# GETT_API_CCXTxfjk = GETT_API_CCXT()
-# # symbol = 'BTC/USDT'
-# liq = asyncio.run(GETT_API_CCXTxfjk.get_ccxtBinance_balance())
-# print(liq)
-# amount = 1.234567887  # amount in base currency BTC
-# price = 42500.321  # price in quote currency USDT
-# formatted_amount = GETT_API_CCXTxfjk.transformed_qnt(symbol, amount)
-# formatted_price = GETT_API_CCXTxfjk.transformed_price(symbol, price)
-# print(formatted_amount, formatted_price)
 
