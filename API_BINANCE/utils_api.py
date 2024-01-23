@@ -4,6 +4,8 @@ from datetime import datetime
 from decimal import Decimal, ROUND_DOWN
 import math
 import asyncio
+import csv
+import json
 import logging, os, inspect
 
 logging.basicConfig(filename='config_log.log', level=logging.INFO)
@@ -500,9 +502,164 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
                 logging.error(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}") 
 
         return quantity, recalc_depo, price_precision
+
+# //////////////////////////////////////////////////////////////////////////////
+
+    def json_write_trades(self, formatted_trades, symbol):
+        
+        output_file=f'{symbol}_tradesBook.json'
+        with open(output_file, 'w') as json_file:
+            json.dump(formatted_trades, json_file, indent=2)
+
+    def csv_write_trades(self, data, symbol):
+        output_file = f'{symbol}_tradesBook.csv'
+        
+        with open(output_file, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['Ticker', 'Date', 'Amount', 'USDT Amount', 'Commission', 'Side', 'Price', 'Profit', 'Total_profit', 'Total_Average_BuyPrice', 'Total_balance'])
+
+            for trade in data:
+                ticker = trade['Ticker']
+                date = trade['Date']                
+                amount = trade['Amount']
+                usdt_amount = trade['USDT Amount']
+                commission = trade['Commission']
+                side = trade['Side']
+                price = trade['Price']
+
+                profit = trade['Profit']
+                total_profit = trade['Total_profit']
+                total_Average_BuyPrice = trade['Total_Average_BuyPrice']
+                total_balance = trade['Total_balance']
+                
+                writer.writerow([ticker, date, amount, usdt_amount, commission, side, price, profit, total_profit, total_Average_BuyPrice, total_balance])
+
+    def calculate_profit_and_amount_flow_json(self, data):
+        
+        sorted_data = sorted(data, key=lambda x: x['timestamp'])
+
+        formatted_trades = []
+        total_buy_amount = 0
+        total_buy_cost = 0
+        average_buy_price = 0
+        total_profit = 0
+        amount_flow = 0
+        amount = 0
+        total_buy_price_flow = ''
+        prev_side = None
+        
+        average_buy_price_list = []
+        total_average_buy_price = 0   
+        corrupt_transfer_flag = False   
+
+        for i, trade in enumerate(sorted_data):
+        
+            profit = 0
+            ticker = trade['symbol']
+            timestamp_ms = trade['timestamp']
+            date = datetime.utcfromtimestamp(timestamp_ms / 1000).strftime('%Y-%m-%d %H:%M:%S')
+            amount = trade['amount']
+            usdt_amount = trade['cost']
+            side = 'Buy' if trade['side'] == 'buy' else 'Sell'
+            try:                    
+                prev_side = 'Buy' if sorted_data[-1]['side'] == 'buy' else 'Sell'
+            except:
+                prev_side = None
+            price = trade['price']
+            commission = trade['fee']['cost']
+
+            if side == 'Buy':
+                if prev_side and prev_side == 'Sell':
+                    if average_buy_price !=0:  
+                        average_buy_price_list.append(average_buy_price)                          
+                        total_buy_amount = 0
+                        total_buy_cost = 0
+                
+                amount_flow += amount
+
+                total_buy_amount += amount
+                total_buy_cost += usdt_amount
+                
+
+            elif side == 'Sell':
+                average_buy_price = total_buy_cost / total_buy_amount
+                profit = (amount * price) - commission - (amount * average_buy_price)
+                amount_flow -= amount
+
+            if profit !=0:
+                total_profit += profit
+            else:
+                profit = ''
+
+            if i == len(sorted_data) - 1:
+                total_buy_price_flow = amount_flow 
+                total_total_profit = total_profit
+                print(average_buy_price_list)
+                total_average_buy_price = sum(average_buy_price_list) / len(average_buy_price_list)
+            else:
+                total_buy_price_flow = ''
+                total_total_profit = ''
+                total_average_buy_price = ''
+
+            if amount_flow > 0:
+        
+                formatted_trade = {
+                    'Ticker': ticker,
+                    'Date': date,
+                    'Amount': amount,
+                    'USDT Amount': usdt_amount,
+                    'Commission': commission,
+                    'Side': side,
+                    'Price': price,
+                    'Profit': profit,
+                    'Total_profit': total_total_profit,
+                    'Total_Average_BuyPrice': total_average_buy_price,
+                    'Total_balance':total_buy_price_flow
+                }
+                formatted_trades.append(formatted_trade)
+
+            else:                
+                amount_flow += amount             
+
+
+        return formatted_trades
+
+    def get_myBook(self, symbol):
+        formatted_trades = None
+        trades_symbol_list = []
+        try:
+            # trades_symbol_list = self.exchange.fetch_total_balance()
+            # trades_symbol_list = [key for key, value in trades_symbol_list.items() if float(value) !=0 and key != 'USDT']
+            # print(trades_symbol_list)
+            trades_data = self.exchange.fetch_my_trades(symbol)
+            
+            # # self.json_write_trades(trades_data, symbol)
+            # # self.csv_write_trades_json(trades_data, symbol)
+            formatted_trades = self.calculate_profit_and_amount_flow_json(trades_data)
+            print(f"len(formatted_trades): {len(formatted_trades)}")
+            if formatted_trades:
+                self.json_write_trades(formatted_trades, symbol)
+                self.csv_write_trades(formatted_trades, symbol)
+            
+            return True
+        except Exception as ex:
+            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+
+        return False
+
+utils_apii = UTILS_APII()
+symbol = 'BTCUSDT'
+print(utils_apii.get_myBook(symbol))
+
+# python -m API_BINANCE.utils_api
     
 
-# spot:
-{'symbol': 'BTCUSDT', 'status': 'TRADING', 'baseAsset': 'BTC', 'baseAssetPrecision': 8, 'quoteAsset': 'USDT', 'quotePrecision': 8, 'quoteAssetPrecision': 8, 'baseCommissionPrecision': 8, 'quoteCommissionPrecision': 8, 'orderTypes': ['LIMIT', 'LIMIT_MAKER', 'MARKET', 'STOP_LOSS_LIMIT', 'TAKE_PROFIT_LIMIT'], 'icebergAllowed': True, 'ocoAllowed': True, 'quoteOrderQtyMarketAllowed': True, 'allowTrailingStop': True, 'cancelReplaceAllowed': True, 'isSpotTradingAllowed': True, 'isMarginTradingAllowed': True, 'filters': [{'filterType': 'PRICE_FILTER', 'minPrice': '0.01000000', 'maxPrice': '1000000.00000000', 'tickSize': '0.01000000'}, {'filterType': 'LOT_SIZE', 'minQty': '0.00001000', 'maxQty': '9000.00000000', 'stepSize': '0.00001000'}, {'filterType': 'ICEBERG_PARTS', 'limit': 10}, {'filterType': 'MARKET_LOT_SIZE', 'minQty': '0.00000000', 'maxQty': '147.10456291', 'stepSize': '0.00000000'}, {'filterType': 'TRAILING_DELTA', 'minTrailingAboveDelta': 10, 'maxTrailingAboveDelta': 2000, 'minTrailingBelowDelta': 10, 'maxTrailingBelowDelta': 2000}, {'filterType': 'PERCENT_PRICE_BY_SIDE', 'bidMultiplierUp': '5', 'bidMultiplierDown': '0.2', 'askMultiplierUp': '5', 'askMultiplierDown': '0.2', 'avgPriceMins': 5}, {'filterType': 'NOTIONAL', 'minNotional': '5.00000000', 'applyMinToMarket': True, 'maxNotional': '9000000.00000000', 'applyMaxToMarket': False, 'avgPriceMins': 5}, {'filterType': 'MAX_NUM_ORDERS', 'maxNumOrders': 200}, {'filterType': 'MAX_NUM_ALGO_ORDERS', 'maxNumAlgoOrders': 5}], 'permissions': ['SPOT', 'MARGIN', 'TRD_GRP_004', 'TRD_GRP_005', 'TRD_GRP_006', 'TRD_GRP_009', 'TRD_GRP_010', 'TRD_GRP_011', 'TRD_GRP_012', 'TRD_GRP_013', 'TRD_GRP_014', 'TRD_GRP_015', 'TRD_GRP_016', 'TRD_GRP_017', 'TRD_GRP_018', 'TRD_GRP_019', 'TRD_GRP_020', 'TRD_GRP_021', 'TRD_GRP_022', 'TRD_GRP_023', 'TRD_GRP_024', 'TRD_GRP_025'], 'defaultSelfTradePreventionMode': 'EXPIRE_MAKER', 'allowedSelfTradePreventionModes': ['EXPIRE_TAKER', 'EXPIRE_MAKER', 'EXPIRE_BOTH']}
+# # spot:
+# {'symbol': 'BTCUSDT', 'status': 'TRADING', 'baseAsset': 'BTC', 'baseAssetPrecision': 8, 'quoteAsset': 'USDT', 'quotePrecision': 8, 'quoteAssetPrecision': 8, 'baseCommissionPrecision': 8, 'quoteCommissionPrecision': 8, 'orderTypes': ['LIMIT', 'LIMIT_MAKER', 'MARKET', 'STOP_LOSS_LIMIT', 'TAKE_PROFIT_LIMIT'], 'icebergAllowed': True, 'ocoAllowed': True, 'quoteOrderQtyMarketAllowed': True, 'allowTrailingStop': True, 'cancelReplaceAllowed': True, 'isSpotTradingAllowed': True, 'isMarginTradingAllowed': True, 'filters': [{'filterType': 'PRICE_FILTER', 'minPrice': '0.01000000', 'maxPrice': '1000000.00000000', 'tickSize': '0.01000000'}, {'filterType': 'LOT_SIZE', 'minQty': '0.00001000', 'maxQty': '9000.00000000', 'stepSize': '0.00001000'}, {'filterType': 'ICEBERG_PARTS', 'limit': 10}, {'filterType': 'MARKET_LOT_SIZE', 'minQty': '0.00000000', 'maxQty': '147.10456291', 'stepSize': '0.00000000'}, {'filterType': 'TRAILING_DELTA', 'minTrailingAboveDelta': 10, 'maxTrailingAboveDelta': 2000, 'minTrailingBelowDelta': 10, 'maxTrailingBelowDelta': 2000}, {'filterType': 'PERCENT_PRICE_BY_SIDE', 'bidMultiplierUp': '5', 'bidMultiplierDown': '0.2', 'askMultiplierUp': '5', 'askMultiplierDown': '0.2', 'avgPriceMins': 5}, {'filterType': 'NOTIONAL', 'minNotional': '5.00000000', 'applyMinToMarket': True, 'maxNotional': '9000000.00000000', 'applyMaxToMarket': False, 'avgPriceMins': 5}, {'filterType': 'MAX_NUM_ORDERS', 'maxNumOrders': 200}, {'filterType': 'MAX_NUM_ALGO_ORDERS', 'maxNumAlgoOrders': 5}], 'permissions': ['SPOT', 'MARGIN', 'TRD_GRP_004', 'TRD_GRP_005', 'TRD_GRP_006', 'TRD_GRP_009', 'TRD_GRP_010', 'TRD_GRP_011', 'TRD_GRP_012', 'TRD_GRP_013', 'TRD_GRP_014', 'TRD_GRP_015', 'TRD_GRP_016', 'TRD_GRP_017', 'TRD_GRP_018', 'TRD_GRP_019', 'TRD_GRP_020', 'TRD_GRP_021', 'TRD_GRP_022', 'TRD_GRP_023', 'TRD_GRP_024', 'TRD_GRP_025'], 'defaultSelfTradePreventionMode': 'EXPIRE_MAKER', 'allowedSelfTradePreventionModes': ['EXPIRE_TAKER', 'EXPIRE_MAKER', 'EXPIRE_BOTH']}
 
-{'symbol': 'BTCUSDT', 'orderId': 24421604067, 'orderListId': -1, 'clientOrderId': 'PkEqgPCNW2DlkL5vvsSmM1', 'transactTime': 1705772569051, 'price': '0.00000000', 'origQty': '0.00029000', 'executedQty': '0.00029000', 'cummulativeQuoteQty': '12.04976970', 'status': 'FILLED', 'timeInForce': 'GTC', 'type': 'MARKET', 'side': 'BUY', 'workingTime': 1705772569051, 'fills': [{'price': '41550.93000000', 'qty': '0.00029000', 'commission': '0.00000029', 'commissionAsset': 'BTC', 'tradeId': 3381894408}], 'selfTradePreventionMode': 'EXPIRE_MAKER'}
+# {'symbol': 'BTCUSDT', 'orderId': 24421604067, 'orderListId': -1, 'clientOrderId': 'PkEqgPCNW2DlkL5vvsSmM1', 'transactTime': 1705772569051, 'price': '0.00000000', 'origQty': '0.00029000', 'executedQty': '0.00029000', 'cummulativeQuoteQty': '12.04976970', 'status': 'FILLED', 'timeInForce': 'GTC', 'type': 'MARKET', 'side': 'BUY', 'workingTime': 1705772569051, 'fills': [{'price': '41550.93000000', 'qty': '0.00029000', 'commission': '0.00000029', 'commissionAsset': 'BTC', 'tradeId': 3381894408}], 'selfTradePreventionMode': 'EXPIRE_MAKER'}
+
+
+    # Общая цена покупки = Σ(цена акции * количество акций)
+    # Общее количество = Σ(количество акций)
+    # Средняя цена = общая покупка цена / общее количество

@@ -5,8 +5,7 @@ import pandas as pd
 import asyncio
 import time
 from connectorss import CONNECTOR_TG
-import csv
-import json
+
 
 import logging, os, inspect
 
@@ -18,155 +17,7 @@ method = 'GET'
 
 class GETT_API_CCXT(CONNECTOR_TG):
     def __init__(self):   
-        super().__init__()
-
-    # def format_and_write_trades_json(self, data, symbol):
-        
-    #     output_file=f'{symbol}_tradesBook.json'
-    #     sorted_data = sorted(data, key=lambda x: x['timestamp'])
-
-    #     # Создание и запись в файл
-    #     formatted_trades = []
-
-    #     for trade in sorted_data:
-    #         ticker = trade['symbol']
-    #         timestamp_ms = trade['timestamp']
-    #         date = datetime.utcfromtimestamp(timestamp_ms / 1000).strftime('%Y-%m-%d %H:%M:%S')
-    #         amount = trade['amount']
-    #         usdt_amount = trade['cost']
-    #         side = 'Buy' if trade['side'] == 'buy' else 'Sell'
-    #         price = trade['price']
-    #         commission = trade['fee']['cost']
-
-    #         # Формирование словаря
-    #         formatted_trade = {
-    #             'Ticker': ticker,
-    #             'Date': date,
-    #             'Amount': amount,
-    #             'USDT Amount': usdt_amount,
-    #             'Commission': commission,
-    #             'Side': side,
-    #             'Price': price
-    #         }
-
-    #         formatted_trades.append(formatted_trade)
-
-    #     with open(output_file, 'w') as json_file:
-    #         json.dump(formatted_trades, json_file, indent=2)
-
-    # def format_and_write_trades(self, data, symbol):
-    #     output_file = f'{symbol}_tradesBook.csv'
-    #     sorted_data = sorted(data, key=lambda x: x['timestamp'])
-
-    #     with open(output_file, mode='w', newline='') as file:
-    #         writer = csv.writer(file)
-    #         writer.writerow(['Ticker', 'Date', 'Amount', 'USDT Amount', 'Commission', 'Side', 'Price'])
-
-    #         for trade in sorted_data:
-    #             ticker = trade['symbol']
-    #             timestamp_ms = trade['timestamp']
-    #             date = datetime.utcfromtimestamp(timestamp_ms / 1000).strftime('%Y-%m-%d %H:%M:%S')
-    #             amount = trade['amount']
-    #             usdt_amount = trade['cost']
-    #             side = 'Buy' if trade['side'] == 'buy' else 'Sell'
-    #             price = trade['price']
-    #             commission = trade['fee']['cost']
-    #             writer.writerow([ticker, date, amount, usdt_amount, commission, side, price])
-
-    def calculate_profit_and_balance_json(self, data):
-
-        
-        sorted_data = sorted(data, key=lambda x: x['timestamp'])
-
-        formatted_trades = []
-
-        # Переменные для бухгалтерских расчетов
-        total_buy_amount = 0
-        total_buy_cost = 0
-        average_buy_price = 0
-        total_profit = 0
-        balance = 0
-        total_balance = ''
-       
-
-        for i, trade in enumerate(sorted_data):
-            profit = 0
-            ticker = trade['symbol']
-            timestamp_ms = trade['timestamp']
-            date = datetime.utcfromtimestamp(timestamp_ms / 1000).strftime('%Y-%m-%d %H:%M:%S')
-            amount = trade['amount']
-            usdt_amount = trade['cost']
-            side = 'Buy' if trade['side'] == 'buy' else 'Sell'
-            price = trade['price']
-            commission = trade['fee']['cost']
-
-            if side == 'Buy':
-                total_buy_amount += amount
-                balance += amount
-                total_buy_cost += usdt_amount
-                average_buy_price = total_buy_cost / total_buy_amount
-
-            elif side == 'Sell':
-                profit = (amount * price) - commission - (amount * average_buy_price)
-                balance -= amount
-
-            if profit !=0:
-                total_profit += profit
-            else:
-                profit = ''
-
-            if i == len(sorted_data) - 1:
-                total_balance = balance 
-                total_total_profit = total_profit
-            else:
-                total_balance = ''
-                total_total_profit = ''
-
-
-            if balance >0:
-                formatted_trade = {
-                    'Ticker': ticker,
-                    'Date': date,
-                    'Amount': amount,
-                    'USDT Amount': usdt_amount,
-                    'Commission': commission,
-                    'Side': side,
-                    'Price': price,
-                    'Profit': profit,
-                    'Total_profit': total_total_profit,
-                    'Balance': total_balance
-                }
-                formatted_trades.append(formatted_trade)
-            else:
-                # balance += amount
-                pass
-
-
-        return formatted_trades
-
-
-
-
-
-
-    def get_myBook(self, symbol):
-        formatted_trades = None
-        try:
-            self.exchange.fetch_total_balance()
-            trades_data = self.exchange.fetch_my_trades(symbol)
-            # self.format_and_write_trades(trades_data, symbol)
-            # self.format_and_write_trades_json(trades_data, symbol)
-            formatted_trades = self.calculate_profit_and_balance_json(trades_data)
-            output_file=f'{symbol}_tradesBook.json'
-            with open(output_file, 'w') as json_file:
-                json.dump(formatted_trades, json_file, indent=2)
-            
-            return True
-        except Exception as ex:
-            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-
-        return False
-        
+        super().__init__()  
 
     def get_ccxtBinance_balance(self):       
         bal = None
@@ -336,9 +187,9 @@ class GETT_API(GETT_API_CCXT):
     
 # //////////////////////////////////////////////////////////////////////////////////
 
-get_apii = GETT_API()
-symbol = 'BTCUSDT'
-print(get_apii.get_myBook(symbol))
+# get_apii = GETT_API()
+# symbol = 'BTCUSDT'
+# print(get_apii.get_myBook(symbol))
 # symbol = 'BNBUSDT'
 # print(get_apii.get_current_price(symbol))
 # print(get_apii.get_ccxtBinance_curPrice(symbol))

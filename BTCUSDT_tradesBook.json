@@ -9,7 +9,8 @@
     "Price": 43397.01,
     "Profit": "",
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -21,7 +22,8 @@
     "Price": 43600.0,
     "Profit": 0.3650030999999814,
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -33,7 +35,8 @@
     "Price": 43655.99,
     "Profit": "",
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -43,9 +46,10 @@
     "Commission": 0.0876,
     "Side": "Sell",
     "Price": 43800.0,
-    "Profit": 0.4774683720930284,
+    "Profit": 0.20042000000000826,
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -57,7 +61,8 @@
     "Price": 45970.61,
     "Profit": "",
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -69,7 +74,8 @@
     "Price": 45457.98,
     "Profit": "",
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -79,9 +85,10 @@
     "Commission": 0.0914,
     "Side": "Sell",
     "Price": 45700.0,
-    "Profit": 1.614715922330106,
+    "Profit": 0.3926400000000143,
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -91,9 +98,23 @@
     "Commission": 0.093,
     "Side": "Sell",
     "Price": 46500.0,
-    "Profit": 3.21311592233009,
+    "Profit": 1.9910399999999981,
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
+  },
+  {
+    "Ticker": "BTC/USDT",
+    "Date": "2024-01-10 23:05:20",
+    "Amount": 0.002,
+    "USDT Amount": 94.0,
+    "Commission": 0.094,
+    "Side": "Sell",
+    "Price": 47000.0,
+    "Profit": 2.9900400000000076,
+    "Total_profit": "",
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -105,7 +126,8 @@
     "Price": 46187.59,
     "Profit": "",
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -117,7 +139,8 @@
     "Price": 42159.99,
     "Profit": "",
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -127,9 +150,10 @@
     "Commission": 0.043,
     "Side": "Sell",
     "Price": 43000.0,
-    "Profit": -1.8895167669172963,
+    "Profit": 0.7970100000000002,
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -141,7 +165,8 @@
     "Price": 41550.93,
     "Profit": "",
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -151,9 +176,10 @@
     "Commission": 0.0120611,
     "Side": "Sell",
     "Price": 41589.99,
-    "Profit": -0.9360595395879319,
+    "Profit": -0.0007337000000013916,
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -165,7 +191,8 @@
     "Price": 41528.94,
     "Profit": "",
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -175,9 +202,10 @@
     "Commission": 0.0120494,
     "Side": "Sell",
     "Price": 41549.67,
-    "Profit": -0.9313987230658007,
+    "Profit": -0.006037700000002033,
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -189,7 +217,8 @@
     "Price": 41608.0,
     "Profit": "",
     "Total_profit": "",
-    "Balance": ""
+    "Total_Average_BuyPrice": "",
+    "Total_balance": ""
   },
   {
     "Ticker": "BTC/USDT",
@@ -199,8 +228,9 @@
     "Commission": 0.00998968,
     "Side": "Sell",
     "Price": 41623.65,
-    "Profit": -0.737736483966005,
-    "Total_profit": 5.8700953301974295,
-    "Balance": 0.0009100000000000002
+    "Profit": -0.006233679999999353,
+    "Total_profit": 7.053159020000006,
+    "Total_Average_BuyPrice": 43358.10125,
+    "Total_balance": 0.0020099999999999996
   }
 ]
