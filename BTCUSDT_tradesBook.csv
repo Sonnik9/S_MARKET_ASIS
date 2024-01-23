@@ -1,4 +1,4 @@
-Ticker,Date,Amount,USDT Amount,Commission,Side,Price,Profit,Total_profit,Total_Average_BuyPrice,Total_balance
+Ticker,Date,Amount,Usdt_Amount,Commission,Side,Price,Profit,Total_profit,Total_Average_Buy_Price,Total_balance
 BTC/USDT,2024-01-05 17:23:40,0.0023,99.813123,2.3e-06,Buy,43397.01,,,,
 BTC/USDT,2024-01-05 17:54:16,0.00229,99.844,0.099844,Sell,43600.0,0.3650030999999814,,,
 BTC/USDT,2024-01-06 11:51:51,0.002,87.31198,2e-06,Buy,43655.99,,,,

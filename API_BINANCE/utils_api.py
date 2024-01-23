@@ -516,7 +516,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
         
         with open(output_file, mode='w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Ticker', 'Date', 'Amount', 'USDT Amount', 'Commission', 'Side', 'Price', 'Profit', 'Total_profit', 'Total_Average_BuyPrice', 'Total_balance'])
+            writer.writerow(['Ticker', 'Date', 'Amount', 'Usdt_Amount', 'Commission', 'Side', 'Price', 'Profit', 'Total_profit', 'Total_Average_Buy_Price', 'Total_balance'])
 
             for trade in data:
                 ticker = trade['Ticker']
