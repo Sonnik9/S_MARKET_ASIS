@@ -1,16 +1,7 @@
-ERROR:root:An error occurred in file 'utils_api.py', line 646: 'USDT Amount'
+
+ERROR:root:An error occurred in file 'utils_api.py', line 648: 'str' object has no attribute 'replece'
 Traceback (most recent call last):
-  File "/home/kali/Desktop/ALL_PROJECT/TREADING/SPOT_MARKET_ASSISTENT/API_BINANCE/utils_api.py", line 642, in get_myBook
-    self.csv_write_trades(formatted_trades, symbol)
-  File "/home/kali/Desktop/ALL_PROJECT/TREADING/SPOT_MARKET_ASSISTENT/API_BINANCE/utils_api.py", line 525, in csv_write_trades
-    usdt_amount = trade['USDT Amount']
-                  ~~~~~^^^^^^^^^^^^^^^
-KeyError: 'USDT Amount'
-ERROR:root:An error occurred in file 'utils_api.py', line 646: 'Usdt amount'
-Traceback (most recent call last):
-  File "/home/kali/Desktop/ALL_PROJECT/TREADING/SPOT_MARKET_ASSISTENT/API_BINANCE/utils_api.py", line 642, in get_myBook
-    self.csv_write_trades(formatted_trades, symbol)
-  File "/home/kali/Desktop/ALL_PROJECT/TREADING/SPOT_MARKET_ASSISTENT/API_BINANCE/utils_api.py", line 525, in csv_write_trades
-    usdt_amount = trade['Usdt amount']
-                  ~~~~~^^^^^^^^^^^^^^^
-KeyError: 'Usdt amount'
+  File "/home/kali/Desktop/ALL_PROJECT/TREADING/SPOT_MARKET_ASSISTENT/API_BINANCE/utils_api.py", line 643, in get_myBook
+    cur_time = str(datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')).replece('-','_').replece(':','_').replece(' ','__')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'replece'

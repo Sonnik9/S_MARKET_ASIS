@@ -29,6 +29,7 @@ class TG_ASSISTENT(UTILS_APII):
         self.tp_order_redirect_flag = False
         self.tp_order_auto_redirect_flag = False
         self.tp_order_custom_redirect_flag = False
+        self.book_triger_flag = False
 
     def connector_func(self, message, response_message):
         retry_number = 3
@@ -279,9 +280,28 @@ class TG_MANAGER(TG_ASSISTENT):
 
         @self.bot.message_handler(func=lambda message: message.text == "BOOK")
         def handle_book(message):               
-            response_message = "Project in progress..."
+            response_message = "Please enter a coin (e.g.: btc)"
             message.text = self.connector_func(message, response_message)
-            # self.book_triger_flag = True
+            self.book_triger_flag = True
+
+        @self.bot.message_handler(func=lambda message: self.book_triger_flag)
+        def handle_book(message):  
+            self.book_triger_flag = False    
+            book_resp = False         
+            symbol = None
+            response_message = 'Some problems with getting trading data. "Please enter a valid data and chaking of another details. Then try again: (e.g.: btc)'
+            try:
+                symbol = message.text.strip().upper() + 'USDT'   
+                book_resp = self.get_myBook(symbol)                
+                if book_resp:
+                    response_message = 'Please check the csv file in your work directory!'      
+
+                message.text = self.connector_func(message, response_message)
+            except Exception as ex:
+                logging.exception(
+                    f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+                message.text = self.connector_func(message, response_message)
+            
 
 
         @self.bot.message_handler(func=lambda message: message.text == "BALANCE")
