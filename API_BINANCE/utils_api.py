@@ -506,36 +506,51 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 
 # //////////////////////////////////////////////////////////////////////////////
 
-    def json_write_trades(self, formatted_trades, symbol):
+    # def json_write_trades(self, formatted_trades, symbol):
         
-        output_file=f'{symbol}_tradesBook.json'
-        with open(output_file, 'w') as json_file:
-            json.dump(formatted_trades, json_file, indent=2)
+    #     output_file=f'{symbol}_tradesBook.json'
+    #     with open(output_file, 'w') as json_file:
+    #         json.dump(formatted_trades, json_file, indent=2)
 
-    def csv_write_trades(self, data, symbol, cur_time):
-        output_file = f'{symbol}_{cur_time}_tradesBook.csv'
+    def csv_write_trades(self, data, label, cur_time, total_total_profit):
+        output_file = f'{label}_{cur_time}_tradesBook.csv'
+        total_total_profit_for_blank = ''
         
         with open(output_file, mode='w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Ticker', 'Date', 'Amount', 'Amount_Usdt', 'Commission', 'Side', 'Price', 'Profit', 'Total_Profit', 'Total_Average_Buy_Price', 'Total_Amount'])
+            writer.writerow(['Ticker', 'Date', 'Amount', 'Size_Usdt', 'Commission', 'Side', 'Price', 'Total_Average_Buy_Price', 'Profit', 'Total_Profit', 'Total_Total_Profit', 'PnL_%', 'Total_Amount'])
 
-            for trade in data:
-                ticker = trade['Ticker']
+            for i, trade in enumerate(data):
+                ticker = trade['Ticker'].replace('USDT', '_USDT')
                 date = trade['Date']                
                 amount = trade['Amount']
-                usdt_amount = trade['Amount_Usdt']
+                usdt_amount = trade['Size_Usdt']
                 commission = trade['Commission']
                 side = trade['Side']
                 price = trade['Price']
-
-                profit = trade['Profit']
-                total_profit = trade['Total_Profit']
-                total_Average_BuyPrice = trade['Total_Average_Buy_Price']
+                average_price = trade['Total_Average_Buy_Price']
+                pnL = trade['PnL_%']
                 total_balance = trade['Total_Amount']
-                
-                writer.writerow([ticker, date, amount, usdt_amount, commission, side, price, profit, total_profit, total_Average_BuyPrice, total_balance])
+                try:
+                    profit = round(float(trade['Profit']), 3)
+                except:
+                    profit = trade['Profit']
+                try:
+                    total_profit = round(float(trade['Total_Profit']), 3)  
+                except:
+                    total_profit = trade['Total_Profit']                   
 
-    def calculate_profit_and_amount_flow_json(self, data):
+                if i == len(data)-2:
+                    try:
+                        total_total_profit_for_blank = round(total_total_profit, 3)
+                    except:
+                        total_total_profit_for_blank = 'Some problens with calculating total_total_profit...'
+
+                else:
+                    total_total_profit_for_blank = ''                
+                writer.writerow([ticker, date, amount, usdt_amount, commission, side, price, average_price, profit, total_profit, total_total_profit_for_blank, pnL, total_balance])
+
+    def counter_calculating(self, data, symbol, transfer_ignore=False):
         
         sorted_data = sorted(data, key=lambda x: x['timestamp'])
 
@@ -551,6 +566,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
         prev_side = None        
         average_buy_price_for_result = 0
         average_buy_price_for_result_for_blanc = ''
+        pnL = 0
 
         for i, trade in enumerate(sorted_data):
         
@@ -574,24 +590,23 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
                     total_buy_cost_for_calc = 0
                     average_buy_price_for_calc = 0              
 
-                total_buy_amount_for_calc += amount
-                total_buy_cost_for_calc += usdt_amount
-                total_buy_amount_for_result += amount
-                total_buy_cost_for_result += usdt_amount
-                average_buy_price_for_result = total_buy_cost_for_result / total_buy_amount_for_result
-                # print(average_buy_price_for_result)
-
                 amount_flow += amount
-                
+                total_buy_amount_for_calc += amount
+                total_buy_amount_for_result += amount
+                total_buy_cost_for_calc += usdt_amount
+                total_buy_cost_for_result += usdt_amount
+                average_buy_price_for_result = total_buy_cost_for_result / total_buy_amount_for_result if total_buy_amount_for_result else 0
+          
 
             elif side == 'Sell':
                 amount_flow -= amount
-                if amount_flow < 0:
-                    amount_flow += amount
-                    continue 
-                else:
-                    average_buy_price_for_calc = total_buy_cost_for_calc / total_buy_amount_for_calc
-                    profit = (amount * price) - commission - (amount * average_buy_price_for_calc )                   
+                if transfer_ignore:
+                    if amount_flow < 0:
+                        amount_flow += amount
+                        continue 
+                
+                average_buy_price_for_calc = total_buy_cost_for_calc / total_buy_amount_for_calc
+                profit = (amount * price) - commission - (amount * average_buy_price_for_calc )                   
 
             if profit !=0:
                 total_profit += profit
@@ -603,45 +618,70 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
                 total_buy_price_flow = amount_flow 
                 total_total_profit = total_profit
                 average_buy_price_for_result_for_blanc = average_buy_price_for_result
+                cur_price = self.get_current_price(symbol)
+                pnL = str(round(((cur_price - average_buy_price_for_result) / average_buy_price_for_result) * 100, 5)) + ' ' + '%'
                                 
             else:
                 total_buy_price_flow = ''
                 total_total_profit = ''
-                average_buy_price_for_result_for_blanc = ''            
+                average_buy_price_for_result_for_blanc = ''  
+                pnL = ''          
         
             formatted_trade = {
                 'Ticker': ticker,
                 'Date': date,
                 'Amount': amount,
-                'Amount_Usdt': usdt_amount,
+                'Size_Usdt': usdt_amount,
                 'Commission': commission,
                 'Side': side,
                 'Price': price,
-                'Profit': profit,
-                'Total_Profit': total_total_profit,
                 'Total_Average_Buy_Price': average_buy_price_for_result_for_blanc,
+                'Profit': profit,
+                'Total_Profit': total_total_profit,  
+                'PnL_%': pnL,              
                 'Total_Amount': total_buy_price_flow
             }
-            formatted_trades.append(formatted_trade)
-         
-
-
+            formatted_trades.append(formatted_trade)  
+        formatted_trades.append({
+            'Ticker': ' ',
+            'Date': ' ',
+            'Amount': ' ',
+            'Size_Usdt': ' ',
+            'Commission': ' ',
+            'Side': ' ',
+            'Price': ' ',
+            'Total_Average_Buy_Price': ' ',
+            'Profit': ' ',
+            'Total_Profit': ' ',   
+            'PnL_%': ' ',                   
+            'Total_Amount': ' '
+            }) 
         return formatted_trades
 
-    def get_myBook(self, symbol):
+    def get_myBook(self, symbol, all_actives_flag):
         formatted_trades = None
         trades_symbol_list = []
+        formatted_trades_list = []
+        total_total_profit = None
         try:
-            # trades_symbol_list = self.exchange.fetch_total_balance()
-            # trades_symbol_list = [key for key, value in trades_symbol_list.items() if float(value) !=0 and key != 'USDT']
-            # print(trades_symbol_list)
-            trades_data = self.exchange.fetch_my_trades(symbol)
-            formatted_trades = self.calculate_profit_and_amount_flow_json(trades_data)
+            if all_actives_flag:
+                trades_symbol_list = self.exchange.fetch_total_balance()
+                trades_symbol_list = [f"{key}USDT" for key, value in trades_symbol_list.items() if float(value) !=0 and key != 'USDT'] + ['SOLUSDT']
+                # print(trades_symbol_list)
+                label = 'ALL_ACTIVES'
+            else:
+                trades_symbol_list.append(symbol)
+                label = symbol
+
+            for x in trades_symbol_list:
+                trades_data = self.exchange.fetch_my_trades(x)
+                formatted_trades_list += self.counter_calculating(trades_data, x)
+            total_total_profit = sum(float(x['Total_Profit']) for x in formatted_trades_list if x['Total_Profit'] and x['Total_Profit'] != ' ')
             # print(f"len(formatted_trades): {len(formatted_trades)}")
-            if formatted_trades:
+            if formatted_trades_list:
                 # self.json_write_trades(formatted_trades, symbol)
                 cur_time = str(datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')).replace('-','_').replace(':','_').replace(' ','__')
-                self.csv_write_trades(formatted_trades, symbol, cur_time)
+                self.csv_write_trades(formatted_trades_list, label, cur_time, total_total_profit)
             
             return True
         except Exception as ex:

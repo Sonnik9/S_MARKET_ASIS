@@ -144,7 +144,7 @@ class GETT_API(GETT_API_CCXT):
         current_price = None
         url = self.URL_PATTERN_DICT['current_price_url']
         params = {'symbol': symbol}
-        print(f"symbol: {symbol}")
+        # print(f"symbol: {symbol}")
         try:
             current_price = self.HTTP_request(url, method=method, params=params) 
             # print(current_price)  

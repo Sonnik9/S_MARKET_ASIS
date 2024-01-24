@@ -280,7 +280,7 @@ class TG_MANAGER(TG_ASSISTENT):
 
         @self.bot.message_handler(func=lambda message: message.text == "BOOK")
         def handle_book(message):               
-            response_message = "Please enter a coin (e.g.: btc)"
+            response_message = "Please enter a ticker and all_tikers_flag (e.g.: btc n) or (e.g.: fjkl y)"
             message.text = self.connector_func(message, response_message)
             self.book_triger_flag = True
 
@@ -291,8 +291,9 @@ class TG_MANAGER(TG_ASSISTENT):
             symbol = None
             response_message = 'Some problems with getting trading data. "Please enter a valid data and chaking of another details. Then try again: (e.g.: btc)'
             try:
-                symbol = message.text.strip().upper() + 'USDT'   
-                book_resp = self.get_myBook(symbol)                
+                symbol = message.text.split(' ')[0].strip().upper() + 'USDT'
+                all_tickers_flag = message.text.split(' ')[1].strip().upper() == 'Y'
+                book_resp = self.get_myBook(symbol, all_tickers_flag)                
                 if book_resp:
                     response_message = 'Please check the csv file in your work directory!'      
 
@@ -300,8 +301,7 @@ class TG_MANAGER(TG_ASSISTENT):
             except Exception as ex:
                 logging.exception(
                     f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-                message.text = self.connector_func(message, response_message)
-            
+                message.text = self.connector_func(message, response_message)         
 
 
         @self.bot.message_handler(func=lambda message: message.text == "BALANCE")
