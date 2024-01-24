@@ -71,7 +71,7 @@ class CONNECTOR_TG(CONNECTOR_BINANCEE):
         super().__init__()      
         self.bot = telebot.TeleBot(self.tg_api_token)
         self.menu_markup = self.create_menu()
-        self.reserved_frathes_list = ["START", "TOP_COINS", "GET LINK", "FILTER", "RISK", "BUY", "SELL", "TP", "BUY+" "CANCEL_ORDERS", "SELL_ALL", "BOOK", "BALANCE", "1", "2", "y", "n"]                    
+        self.reserved_frathes_list = ["START", "TOP_COINS", "GET LINK", "FILTER", "RISK", "BUY", "SELL", "TP", "BUY+" "CANCEL_ORDERS", "SELL_ALL", "BOOK", "BALANCE", "1", "2", "y", "n"] + [self.seq_control_token]                  
 
     def create_menu(self):
         menu_markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True, one_time_keyboard=True)

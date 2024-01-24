@@ -16,13 +16,21 @@ class BASIC_PARAMETRS():
     def init_api_key(self):
         self.tg_api_token = os.getenv("TG_API_TOKEN", "")
         self.api_key  = os.getenv(f"BINANCE_API_PUBLIC_KEY__TESTNET_{str(self.test_flag)}", "")
-        self.api_secret = os.getenv(f"BINANCE_API_PRIVATE_KEY__TESTNET_{str(self.test_flag)}", "")  
-
+        self.api_secret = os.getenv(f"BINANCE_API_PRIVATE_KEY__TESTNET_{str(self.test_flag)}", "") 
+        self.seq_control_token = os.getenv(f"SEQ_TOKEN", "")
         self.header = {
             'X-MBX-APIKEY': self.api_key
-        }     
+        }    
 
-class URL_TEMPLATES(BASIC_PARAMETRS):
+class SEQurity(BASIC_PARAMETRS):
+    def __init__(self) -> None:
+        super().__init__() 
+
+    def seq_init(self): 
+        pass       
+
+
+class URL_TEMPLATES(SEQurity):
     def __init__(self) -> None:
         super().__init__()        
         self.URL_PATTERN_DICT= {}              

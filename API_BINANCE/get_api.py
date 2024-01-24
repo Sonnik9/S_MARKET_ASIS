@@ -5,13 +5,10 @@ import pandas as pd
 import asyncio
 import time
 from connectorss import CONNECTOR_TG
-
-
 import logging, os, inspect
 
 logging.basicConfig(filename='config_log.log', level=logging.INFO)
 current_file = os.path.basename(__file__)
-
 
 method = 'GET'
 
