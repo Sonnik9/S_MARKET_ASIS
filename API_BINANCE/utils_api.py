@@ -38,7 +38,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
                                 (float(ticker['lastPrice']) >= self.MIN_FILTER_PRICE) and (
                                         float(ticker['lastPrice']) <= self.MAX_FILTER_PRICE)]
 
-                print(top_pairs[:4])
+                # print(top_pairs[:4])
 
                 top_pairs = sorted(top_pairs, key=lambda x: float(x['quoteVolume']), reverse=True)
                 top_pairs = top_pairs[:self.SLICE_VOLUME_PAIRS]
@@ -174,22 +174,27 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 
         return itemm
 
-    def tp_make_orders(self, symbol, depo, enter_price, target_prices, auto_flag):
+    def tp_make_orders(self, symbol, depo, target_prices, auto_flag):
         item = {}
         market_type = 'LIMIT'
         is_selling = -1
         tp_price = None 
         success_flag = False
-        item["symbol"] = symbol
+        item["symbol"] = symbol        
         
-        
-        try:           
-            success_flag = False   
+        try:
+            item['current_price'] = self.get_current_price(symbol)                     
+            item['qnt'], item['recalc_depo'], item['price_precision'] = self.calc_qnt_func(symbol, item['current_price'], depo)           
+
+            print(f"{symbol}:\nitemm['qnt']: {item['qnt']}") 
+            print(f"{symbol}:\nitemm['recalc_depo']: {item['recalc_depo']}") 
+            print(f"{symbol}:\nitemm['itemm['price_precision']']: {item['price_precision']}")          
+            
             tp_ratio = self.TP_rate
-            if auto_flag:
-                tp_price = self.static_tp_calc(enter_price, tp_ratio)
+            if auto_flag:              
+                tp_price = self.static_tp_calc(item, tp_ratio)
                 print(f"target_price: {tp_price}")  
-                target_price = target_prices[0]       
+                      
                 open_static_tp_order, success_flag = self.make_order(item, is_selling, tp_price, market_type)
                 print(f'open_static_tp_order  {open_static_tp_order}')
 

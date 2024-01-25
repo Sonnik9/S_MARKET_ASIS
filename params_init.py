@@ -22,15 +22,7 @@ class BASIC_PARAMETRS():
             'X-MBX-APIKEY': self.api_key
         }    
 
-class SEQurity(BASIC_PARAMETRS):
-    def __init__(self) -> None:
-        super().__init__() 
-
-    def seq_init(self): 
-        pass       
-
-
-class URL_TEMPLATES(SEQurity):
+class URL_TEMPLATES(BASIC_PARAMETRS):
     def __init__(self) -> None:
         super().__init__()        
         self.URL_PATTERN_DICT= {}              
@@ -73,33 +65,28 @@ class TIME_TEMPLATES(URL_TEMPLATES):
 class FILTER_SET(TIME_TEMPLATES):
     def __init__(self) -> None:
         super().__init__()
-        self.daily_filter_flag = True
-        self.SLICE_VOLUME_PAIRS = 50 # volums    
-        self.slice_volatilyty_flag = True     
-        self.SLICE_VOLATILITY = 40 # volatility
-        self.price_filter_flag = False
-        self.MIN_FILTER_PRICE = 0.001 # min price
-        self.MAX_FILTER_PRICE = 3000000 # max price
-        self.problem_pairs = ['USDCUSDT', 'DOGEUSDT'] 
-        self.min_volume_usdtFilter_flag = True
-        self.MIN_VOLUM_USDT = 100000
+        self.daily_filter_flag = False # True = Daily candle is green(close_price > open_price)
+        self.SLICE_VOLUME_PAIRS = 50 # Slice of top pairs by volume    
+        self.slice_volatilyty_flag = True # Enabling a filter to search for pairs by volatility   
+        self.SLICE_VOLATILITY = 40 # Slice of top pairs by volatility
+        self.price_filter_flag = False # Enabling a filter for a price range
+        self.MIN_FILTER_PRICE = 0.001 # min price filter
+        self.MAX_FILTER_PRICE = 3000000 # max price filter
+        self.problem_pairs = ['USDCUSDT', 'DOGEUSDT'] # Exclusion pairs
+        self.min_volume_usdtFilter_flag = True # Minimum volume filter
+        self.MIN_VOLUM_USDT = 100000 # Amount of minimum volume per 24 hours in usdt
 
 
 class RISKK(FILTER_SET):
     def __init__(self) -> None:
         super().__init__()
-        self.static_TP_flag = True        
-        self.SL_ratio = 3  # % 
-        self.tp_coeff = 15
+        self.static_TP_flag = True 
+        self.TP_rate = 4 # %      
+        self.SL_ratio = 3  # %  
         # /////////////////////////////////////////        
         self.atr_TP_coef = 0.9
         self.atr_TP_flag = False
-        
-    def risk_init(self):
-        if self.static_TP_flag:
-            self.TP_rate = self.SL_ratio *self.tp_coeff  
-        else:
-            self.atr_TP_flag = True  
+        self.risk_ralations = self.TP_rate/self.SL_ratio 
 
 class INIT_PARAMS(RISKK):
     def __init__(self) -> None:
@@ -110,7 +97,7 @@ class INIT_PARAMS(RISKK):
         print('helloo')
         self.init_api_key()       
         self.init_urls()        
-        self.risk_init()
+        
 
 # params = INIT_PARAMS()
 # print(params.test_flag)

@@ -1,4 +1,5 @@
 from API_BINANCE.utils_api import UTILS_APII
+from datetime import datetime
 import time
 import logging, os, inspect
 
@@ -24,6 +25,12 @@ class TG_ASSISTENT(UTILS_APII):
         self.seq_control_flag = False 
         self.seq_controlStart_flag = False
         self.dont_seq_control = False
+        self.block_acess_flag = False 
+        self.block_acess_counter = 0
+        self.start_day_date = None
+
+        self.handle_redirect_risk_flag = False
+
         self.start_flag = False
         self.settings_tg_flag = False
         self.settings_1_redirect_flag = False
@@ -50,11 +57,17 @@ class TG_ASSISTENT(UTILS_APII):
                 time.sleep(1.1 + i*decimal)        
                    
         return None
+
+    def date_of_the_month(self):        
+        current_time = time.time()        
+        datetime_object = datetime.fromtimestamp(current_time)       
+        formatted_time = datetime_object.strftime('%d')
+        return int(formatted_time)
     
-    def tp_order_tgButton_handler(self, symbol, depo, enter_price, target_prices):
+    def tp_order_tgButton_handler(self, symbol, depo, target_prices):
         tp_response = None
         tp_tg_response = None
-        tp_response = self.tp_make_orders(symbol, depo, enter_price, target_prices)
+        tp_response = self.tp_make_orders(symbol, depo, target_prices)
         if tp_response["done_level"] == 2:
             tp_tg_response = "Take profit was created succesfully!"
         else:
@@ -130,35 +143,55 @@ class TG_MANAGER(TG_ASSISTENT):
         super().__init__()
 
     def run(self):  
-        try:        
+        try:          
             @self.bot.message_handler(commands=['start'])
             @self.bot.message_handler(func=lambda message: message.text == 'START')
-            def handle_start_input(message): 
-                self.init_itits()           
-                response_message = "Please enter a secret token..."
-                message.text = self.connector_func(message, response_message)
-                self.start_flag = True
+            def handle_start_input(message):
+                if self.block_acess_flag:
+                    response_message = "Don't bullshit!"
+                    message.text = self.connector_func(message, response_message)
+                else:
+                    self.init_itits() 
+                    self.start_day_date = self.date_of_the_month()          
+                    self.bot.send_message(message.chat.id, "Please enter a secret token...", reply_markup=self.menu_markup)                   
+                    self.start_flag = True
 
             @self.bot.message_handler(func=lambda message: self.start_flag)
             def handle_start_redirect(message):
                 try:
-                    self.start_flag = False
+                    cur_day_date = None                    
                     value_token = message.text.strip()
-                    if value_token == self.seq_control_token:
+                    cur_day_date = self.date_of_the_month()
+
+                    if self.start_day_date != cur_day_date:
+                        self.start_day_date = cur_day_date
+                        self.block_acess_flag = False 
+                        self.block_acess_counter = 0
+
+                    if value_token == self.seq_control_token and not self.block_acess_flag:
                         self.seq_control_flag = True 
                         print(self.seq_control_flag)
                         try: 
                             response_message = "Token verification was successful! Please select an option!"
-                            message.text = self.connector_func(message, response_message)          
+                            message.text = self.connector_func(message, response_message)  
+                            self.start_flag = False        
                         except Exception as ex:
                             logging.exception(
                                 f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-                    else:
+                            
+                    elif value_token != self.seq_control_token and not self.block_acess_flag:
                         self.dont_seq_control = True
                         print(self.dont_seq_control)
                         try:
-                            response_message = "Please tab START and put a valid token!"
-                            message.text = self.connector_func(message, response_message)
+                            self.block_acess_counter += 1
+                            if self.block_acess_counter >= 3:
+                                self.block_acess_flag = True
+                                self.start_flag = False 
+                                response_message = "The number of attempts has been exhausted. Please try again later..."
+                                message.text = self.connector_func(message, response_message)
+                            else:
+                                response_message = "Please put a valid token!"
+                                message.text = self.connector_func(message, response_message)
                         except Exception as ex:
                             logging.exception(
                                 f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
@@ -167,7 +200,7 @@ class TG_MANAGER(TG_ASSISTENT):
                         f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
             # ////////////////////////////////////////////////////////////////////////////////////////////////
             
-            @self.bot.message_handler(func=lambda message: message.text == 'TOP_COINS' and self.seq_control_flag)
+            @self.bot.message_handler(func=lambda message: message.text == 'TOP_COINS' and self.seq_control_flag and not self.block_acess_flag)
             def handle_seq5(message): 
                 try:
                     top_coins = None    
@@ -198,7 +231,7 @@ class TG_MANAGER(TG_ASSISTENT):
 
             # //////////////////////////////////////////////////////////////////////////////////////////////
 
-            @self.bot.message_handler(func=lambda message: message.text == 'GET LINK' and self.seq_control_flag)
+            @self.bot.message_handler(func=lambda message: message.text == 'GET LINK' and self.seq_control_flag and not self.block_acess_flag)
             def handle_getLink(message):
                 try: 
                     top_coins = None    
@@ -232,12 +265,11 @@ class TG_MANAGER(TG_ASSISTENT):
 
             # ////////////////////////////////////////////////////////////////////////////////////////////////    
 
-            @self.bot.message_handler(func=lambda message: message.text == "FILTER" and self.seq_control_flag)
+            @self.bot.message_handler(func=lambda message: message.text == "FILTER" and self.seq_control_flag and not self.block_acess_flag)
             def handle_filter(message): 
                 try:           
-                    response_message = "Please select a filter options..." 
-                    message.text = self.connector_func(message, response_message) 
-                    # self.handle_filter_flag = True
+                    response_message = "For filter settings please go to the params_init file (class FILTER_SET) of the working directory and change a filter options!" 
+                    message.text = self.connector_func(message, response_message)                   
                 except Exception as ex:
                     logging.exception(
                         f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
@@ -251,15 +283,44 @@ class TG_MANAGER(TG_ASSISTENT):
                     logging.exception(
                         f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
 
-            @self.bot.message_handler(func=lambda message: message.text == "RISK")
+            @self.bot.message_handler(func=lambda message: message.text == "RISK" and not self.block_acess_flag)
             def handle_filter(message):  
                 try:          
-                    response_message = "Please select a risk options..." 
+                    response_message = "Please enter a risk options: tp_mode and corresponings metrics (e.g.: s 4/2) or (e.g.: a 1.2)" 
                     message.text = self.connector_func(message, response_message) 
-                    # self.handle_risk_flag = True
+                    self.handle_redirect_risk_flag = True
                 except Exception as ex:
                     logging.exception(
                         f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+                    
+            @self.bot.message_handler(func=lambda message: self.handle_redirect_risk_flag)
+            def handle_filter_redirect(message):  
+                try:  
+                    self.handle_redirect_risk_flag = False  
+                             
+                    self.static_TP_flag = message.text.split(' ')[0].strip().upper() == 'S'           
+                    self.atr_TP_flag = message.text.split(' ')[0].strip().upper() == 'A'                           
+
+                    if self.static_TP_flag:
+                        self.TP_rate = float(message.text.split(' ')[1].strip().split('/')[0].strip())
+                        self.SL_ratio = float(message.text.split(' ')[1].strip().split('/')[1].strip())
+                        self.risk_ralations = self.TP_rate/self.SL_ratio
+                                                
+                        response_message = f"The following parameters have been initialised:\nself.static_TP_flag = {self.static_TP_flag}, self.TP_rate = {self.TP_rate} self.risk_ralations = {self.risk_ralations}"
+                    elif self.atr_TP_flag: 
+                                       
+                        self.atr_TP_coef = float(message.text.split(' ')[1].strip())                      
+                       
+                        response_message = f"The following parameters have been initialised:\nself.atr_TP_flag = {self.atr_TP_flag}, self.atr_TP_coef = {self.atr_TP_coef}"
+                     
+                    message.text = self.connector_func(message, response_message) 
+                    
+                except Exception as ex:
+                    logging.exception(
+                        f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+                    response_message = "Please enter a valid data and check the rest of the details. Then try again (e.g.: s 4/2) or (e.g.: a 1.2)"
+                    message.text = self.connector_func(message, response_message)
+                    self.open_order_redirect_flag = True
 
             @self.bot.message_handler(func=lambda message: message.text == 'RISK')
             def handle_seq9(message): 
@@ -272,7 +333,7 @@ class TG_MANAGER(TG_ASSISTENT):
 
             # /////////////////////////////////////////////////////////////////////////////////
 
-            @self.bot.message_handler(func=lambda message: (message.text == "BUY" or message.text == "SELL") and self.seq_control_flag)
+            @self.bot.message_handler(func=lambda message: (message.text == "BUY" or message.text == "SELL") and self.seq_control_flag and not self.block_acess_flag)
             def handle_buyOrder(message): 
                 try:            
                     response_message = "Please enter a coin and depo/quantity, direction with a space (e.g.: btc 12usdt 1) or (e.g.: btc 0.002btc -1)"
@@ -328,13 +389,13 @@ class TG_MANAGER(TG_ASSISTENT):
                 except Exception as ex:
                     logging.exception(
                         f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-                    response_message = "Please enter a valid data and chaking of another details. Then try again (e.g.: btc 9)"
+                    response_message = "Please enter a valid data and check the rest of the details. Then try again (e.g.: btc 9)"
                     message.text = self.connector_func(message, response_message)
                     self.open_order_redirect_flag = True
 
             # /////////////////////////////////////////////////////////////////////////////////
                     
-            @self.bot.message_handler(func=lambda message: message.text == "TP" and self.seq_control_flag)
+            @self.bot.message_handler(func=lambda message: message.text == "TP" and self.seq_control_flag and not self.block_acess_flag)
             def handle_tpOrder(message):   
                 try:
                     response_message = "Please select an option:\n1 - Auto;\n2 - Current"        
@@ -360,11 +421,12 @@ class TG_MANAGER(TG_ASSISTENT):
                     print(message.text)
                     response_message = ""
                     if message.text == '1':
-                        response_message = "Please enter a coin and depo/quantity and enterPrice with a space (e.g.: btc 12usdt 43000) or (e.g.: btc 0.002btc 44000)"
+                        response_message = "Please enter a coin and depo/quantity with a space (e.g.: btc 12usdt) or (e.g.: btc 0.002btc)"
+                        self.tp_order_auto_redirect_flag = True
                             
                     elif message.text == '2':
                         response_message = "Please enter a coin, depo/quantity and target prices with a space (e.g.: btc 12usdt 45500) or (e.g.: btc 0.002btc 45500 46500 47500)"
-                    self.tp_order_auto_redirect_flag = True
+                    
                     message.text = self.connector_func(message, response_message)
                 except Exception as ex:
                     logging.exception(
@@ -373,30 +435,28 @@ class TG_MANAGER(TG_ASSISTENT):
             @self.bot.message_handler(func=lambda message: self.tp_order_auto_redirect_flag)
             def handle_tpOrder_redirect_auto(message): 
                 print('bndgjklb nadgjklbn') 
-                response_message = ""
+                self.tp_order_auto_redirect_flag = False 
+                tp_response = "Some problems with making tp order..."
                 symbol = 0
                 depo = 0
                 target_prices = []   
                 try:
                     symbol = message.text.split(' ')[0].strip().upper() + 'USDT'     
-                    depo = message.text.split(' ')[1].strip().upper()  
-                    enter_price = float(message.text.split(' ')[2].strip())            
-                    response_message = "Please waiting..."
-                    self.tp_order_auto_redirect_flag = False 
+                    depo = message.text.split(' ')[1].strip().upper()                              
+                    response_message = "Please waiting..."                    
                     message.text = self.connector_func(message, response_message)    
-                    tp_response = self.tp_order_tgButton_handler(symbol, depo, enter_price, target_prices)
-                    response_message = tp_response             
-                    message.text = self.connector_func(message, response_message)   
+                    tp_response = self.tp_order_tgButton_handler(symbol, depo, target_prices)                               
+                    message.text = self.connector_func(message, tp_response)   
                 except Exception as ex:
                     logging.exception(
                         f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-                    response_message = "Please enter a valid data and chaking of another details. Then try again (e.g.: btc 9)"
+                    response_message = "Please enter a valid data and check the rest of the details. Then try again (e.g.: btc 9)"
                     message.text = self.connector_func(message, response_message)
                     self.tp_order_auto_redirect_flag = True             
 
             # /////////////////////////////////////////////////////////////////////////////////            
 
-            @self.bot.message_handler(func=lambda message: message.text == "BOOK" and self.seq_control_flag)
+            @self.bot.message_handler(func=lambda message: message.text == "BOOK" and self.seq_control_flag and not self.block_acess_flag)
             def handle_book(message): 
                 try:              
                     response_message = "Please enter a ticker and all_tikers_flag (e.g.: btc n) or (e.g.: fjkl y)"
@@ -420,7 +480,7 @@ class TG_MANAGER(TG_ASSISTENT):
                 self.book_triger_flag = False    
                 book_resp = False         
                 symbol = None
-                response_message = 'Some problems with getting trading data. "Please enter a valid data and chaking of another details. Then try again: (e.g.: btc)'
+                response_message = 'Some problems with getting trading data. "Please enter a valid data and check the rest of the details. Then try again: (e.g.: btc)'
                 try:
                     symbol = message.text.split(' ')[0].strip().upper() + 'USDT'
                     all_tickers_flag = message.text.split(' ')[1].strip().upper() == 'Y'
@@ -435,7 +495,7 @@ class TG_MANAGER(TG_ASSISTENT):
                     message.text = self.connector_func(message, response_message)         
 
 
-            @self.bot.message_handler(func=lambda message: message.text == "BALANCE" and self.seq_control_flag)
+            @self.bot.message_handler(func=lambda message: message.text == "BALANCE" and self.seq_control_flag and not self.block_acess_flag)
             def handle_getBalance(message):
                 get_balance1 = ''
                 get_balance2 = ''
@@ -464,14 +524,14 @@ class TG_MANAGER(TG_ASSISTENT):
                         f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
             # /////////////////////////////////////////////////////////////////////////////// 
                 
-            @self.bot.message_handler(func=lambda message: message.text not in self.reserved_frathes_list)
-            def handle_exceptionsInput(message):
-                try:
-                    response_message = f"Try again and enter a valid option."
-                    message.text = self.connector_func(message, response_message)   
-                except Exception as ex:
-                    logging.exception(
-                        f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
+            # @self.bot.message_handler(func=lambda message: message.text not in self.reserved_frathes_list)
+            # def handle_exceptionsInput(message):
+            #     try:
+            #         response_message = f"Try again and enter a valid option."
+            #         message.text = self.connector_func(message, response_message)   
+            #     except Exception as ex:
+            #         logging.exception(
+            #             f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
             self.bot.polling()
         except Exception as ex:
             logging.exception(
