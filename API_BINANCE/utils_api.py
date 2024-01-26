@@ -63,78 +63,11 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
     # ///////////////////////////////////////////////////////////////////////////
 
     def count_multipliter_places(self, number):
-        if isinstance(number, (int, float)):
-            number_str = str(number)
-            if '.' in number_str:
-                return len(number_str.split('.')[1])
-        return 0 
-    
-    # def calc_qnt_func(self, symbol, price, depo): 
-    #     symbol_info = None
-    #     symbol_data = None 
-    #     price_precision = None
-    #     quantity_precision = None
-    #     quantity = None  
-    #     notional = None
-    #     recalc_depo = None
-    #     usdt_flag = False
-    #     # min_qnt = None 
-    #     if depo.endswith('USDT'):
-    #         depo = float(depo.replace('USDT', '').strip())
-    #         print(depo*2)
-    #         usdt_flag = True
-    #     elif depo.endswith(f"{symbol.replace('USDT', '').strip()}"):            
-    #         depo = depo.upper()
-    #         depo = float(depo.replace(f"{symbol.replace('USDT', '').strip()}", '').strip())
-    #         print(depo*2)
-
-    #     # return
-        
-    #     try:
-    #         symbol_info = self.get_excangeInfo(symbol)
-    #     except Exception as ex:
-    #         logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
-
-    #     if symbol_info:
-    #         try:
-    #             symbol_data = next((item for item in symbol_info["symbols"] if item['symbol'] == symbol), None)
-    #         except Exception as ex:
-    #             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-            
-    #     if symbol_data:   
-    #         print(symbol_data)   
-    #         return      
-    #         try:                
-    #             tick_size = float(symbol_data['filters'][0]["tickSize"])
-    #             price_precision = int(symbol_data['pricePrecision']) 
-    #             # print(f"price_precision: {price_precision}")           
-    #             quantity_precision = int(symbol_data['quantityPrecision']) 
-    #             lot_size_filter = next((item for item in symbol_data['filters'] if item['filterType'] == 'MIN_NOTIONAL'), None)  
-    #             notional = float(lot_size_filter.get('notional', None))
-    #             print(f"notional: {notional}")
-                
-    #         except Exception as ex:
-    #             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-        
-    #         try:
-    #             tick_size = self.count_multipliter_places(tick_size)
-    #             print(f"tick_size: {tick_size}")
-    #         except Exception as ex:
-    #             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}") 
-            
-    #         try:  
-    #             if depo <= notional:
-    #                 depo = notional  
-    #             quantity = round(depo / price, quantity_precision)
-    #             # quantity = round(depo / price, tick_size)
-    #             recalc_depo = quantity * price     
-    #             print(f"quantity: {quantity}")
-    #             # print(f"{symbol}:  {quantity, recalc_depo, price_precision, tick_size}")
-    #         except Exception as ex:
-    #             logging.exception(f"An error occurred: {ex}")
-
-    #     # return quantity, recalc_depo, price_precision, tick_size
-    
+        # if isinstance(number, (int, float)):
+        number_str = str(number)
+        if '.' in number_str:
+            return len(number_str.split('.')[1])
+        return 0
     
 # ///////////////////////////////////////////////////////////////////////////////////
     def buy_market_order_temp_func(self, item, depo, is_selling):
@@ -174,7 +107,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 
         return itemm
 
-    def tp_make_orders(self, symbol, depo, target_prices, auto_flag):
+    def tp_make_orders(self, symbol, depo, target_prices):
         item = {}
         market_type = 'LIMIT'
         is_selling = -1
@@ -183,27 +116,52 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
         item["symbol"] = symbol        
         
         try:
-            item['current_price'] = self.get_current_price(symbol)                     
-            item['qnt'], item['recalc_depo'], item['price_precision'] = self.calc_qnt_func(symbol, item['current_price'], depo)           
-
-            print(f"{symbol}:\nitemm['qnt']: {item['qnt']}") 
-            print(f"{symbol}:\nitemm['recalc_depo']: {item['recalc_depo']}") 
-            print(f"{symbol}:\nitemm['itemm['price_precision']']: {item['price_precision']}")          
-            
-            tp_ratio = self.TP_rate
-            if auto_flag:              
-                tp_price = self.static_tp_calc(item, tp_ratio)
+            if not target_prices:  
+                trades_data = self.exchange.fetch_my_trades(symbol)    
+                filtered_data = [x for x in trades_data if x['side'] == 'buy']     
+                sorted_data = sorted(filtered_data, key=lambda x: x['timestamp'])              
+                item['enter_price'] = sorted_data[-1]['info']['price'] 
+                # print(item['enter_price'])
+                item['price_precision'] = self.count_multipliter_places(item['enter_price'])
+                # print(item['price_precision'])
+                # return             
+                
+                tp_mode = 'S'
+                tp_ratio = self.TP_rate
+                item['atr'] = None  
+                atr_TP_coef = None          
+                tp_price = self.static_tp_calc(item, tp_mode, tp_ratio, atr_TP_coef)
                 print(f"target_price: {tp_price}")  
+                # return
+                item['qnt'] = float(sorted_data[-1]['info']['qty'])
+                print(item['qnt'])
+                # return
                       
                 open_static_tp_order, success_flag = self.make_order(item, is_selling, tp_price, market_type)
                 print(f'open_static_tp_order  {open_static_tp_order}')
+                tp_tg_response = None
 
-            if success_flag:                                     
-                item["done_level"] = 2     
+                if success_flag:       
+                    tp_tg_response = "Take profit was created succesfully!"
+                else:
+                    tp_tg_response = "Some problem with creating tpOrder..."
+
+                return tp_tg_response
+   
         except Exception as ex:
-            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{open_static_tp_order}")
+            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{'sljrn'}")
 
-        return item
+        return "Some problem with creating tpOrder..."
+
+
+
+        # return tp_tg_response
+        
+        # return item
+            
+# {'info': {'symbol': 'BTCUSDT', 'id': '3381919667', 'orderId': '24421877188', 'orderListId': '-1', 'price': '41608.00000000', 'qty': '0.00029000', 'quoteQty': '12.06632000', 'commission': '0.00000029', 'commissionAsset': 'BTC', 'time': '1705775204887', 'isBuyer': True, 'isMaker': False, 'isBestMatch': True}, 'timestamp': 1705775204887, 'datetime': '2024-01-20T18:26:44.887Z', 'symbol': 'BTC/USDT', 'id': '3381919667', 'order': '24421877188', 'type': None, 'side': 'buy', 'takerOrMaker': 'taker', 'price': 41608.0, 'amount': 0.00029, 'cost': 12.06632, 'fee': {'cost': 2.9e-07, 'currency': 'BTC'}, 'fees': [{'cost': 2.9e-07, 'currency': 'BTC'}]}
+# None
+# None
     
 #     # ///////////////////////////////////////////////////////////////////////////////
 #     async def positions_info(self):
@@ -555,7 +513,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
                     total_total_profit_for_blank = ''                
                 writer.writerow([ticker, date, amount, usdt_amount, commission, side, price, average_price, profit, total_profit, total_total_profit_for_blank, pnL, total_balance])
 
-    def counter_calculating(self, data, symbol, transfer_ignore=False):
+    def counter_calculating(self, data, symbol, transfer_ignore=False):        
         
         sorted_data = sorted(data, key=lambda x: x['timestamp'])
 
@@ -694,8 +652,11 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 
         return False
 
-# utils_apii = UTILS_APII()
-# symbol = 'BTCUSDT'
+utils_apii = UTILS_APII()
+symbol = 'BTCUSDT'
+depo = 10
+target_prices = []
+print(utils_apii.tp_make_orders(symbol, depo, target_prices))
 # print(utils_apii.get_myBook(symbol))
 
 # python -m API_BINANCE.utils_api

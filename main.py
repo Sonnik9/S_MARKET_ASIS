@@ -62,19 +62,8 @@ class TG_ASSISTENT(UTILS_APII):
         current_time = time.time()        
         datetime_object = datetime.fromtimestamp(current_time)       
         formatted_time = datetime_object.strftime('%d')
-        return int(formatted_time)
-    
-    def tp_order_tgButton_handler(self, symbol, depo, target_prices):
-        tp_response = None
-        tp_tg_response = None
-        tp_response = self.tp_make_orders(symbol, depo, target_prices)
-        if tp_response["done_level"] == 2:
-            tp_tg_response = "Take profit was created succesfully!"
-        else:
-            tp_tg_response = "Some problem with creating tpOrder..."
-
-        return tp_tg_response
-    
+        return int(formatted_time)    
+  
     def buy_order_tgButton_handler(self, symbol, depo, is_selling):
         item = {}  
         buy_order_returned_list = []
