@@ -69,6 +69,72 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
             return len(number_str.split('.')[1])
         return 0
     
+  
+
+    def calc_qnt_func(self, symbol, price, depo, rounding_type='round'): 
+        symbol_info = None
+        symbol_data = None 
+        price_precision = None
+        quantity_precision = None
+        qnt = None
+        quantity = None        
+        
+        usdt_flag = False
+        minNotional = None 
+        maxNotional = None
+
+        if depo.endswith('USDT'):
+            depo = float(depo.replace('USDT', '').strip())
+            print(depo*2)
+            usdt_flag = True
+        elif depo.endswith(f"{symbol.replace('USDT', '').strip()}"):            
+            qnt = depo.upper()
+            qnt = float(depo.replace(f"{symbol.replace('USDT', '').strip()}", '').strip())
+            print(qnt*2)
+
+        try:
+            symbol_info = self.get_excangeInfo(symbol)
+        except Exception as ex:
+            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
+
+        if symbol_info:
+            try:
+                symbol_data = next((item for item in symbol_info["symbols"] if item['symbol'] == symbol), None)
+                # print(symbol_data)
+            except Exception as ex:
+                logging.error(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
+            
+        if symbol_data:        
+            try:
+                tick_size = float(symbol_data['filters'][0]["tickSize"])
+                lot_size_filter = next((f for f in symbol_data.get('filters', []) if f.get('filterType') == 'LOT_SIZE'), None)
+                if lot_size_filter:
+                    quantity_precision = -int(math.log10(float(lot_size_filter.get('stepSize', '1'))))
+                    print(f"quantity_precision: {quantity_precision}")
+
+                minNotional = float(next((f['minNotional'] for f in symbol_data['filters'] if f['filterType'] == 'NOTIONAL'), None))
+                maxNotional = float(next((f['maxNotional'] for f in symbol_data['filters'] if f['filterType'] == 'NOTIONAL'), None))
+                
+                price_precision = self.count_multipliter_places(tick_size)                    
+
+                # print(f"notional: {minNotional}") 
+                # print(f"notional: {maxNotional}")   
+
+                if not usdt_flag:
+                    depo = qnt * price
+                if depo <= minNotional:
+                    depo = minNotional               
+                elif depo >= maxNotional:
+                    depo = maxNotional 
+
+                if rounding_type == 'round':
+                    quantity = round(depo / price, quantity_precision)
+
+            except Exception as ex:
+                logging.error(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}") 
+
+        return quantity, price_precision
+    
 # ///////////////////////////////////////////////////////////////////////////////////
     def buy_market_order_temp_func(self, item, depo, is_selling):
         itemm = item.copy()        
@@ -79,7 +145,7 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
         open_market_order = None
 
         try:                    
-            itemm['qnt'], itemm['recalc_depo'], itemm['price_precision'] = self.calc_qnt_func(symbol, enter_deJure_price, depo)            
+            itemm['qnt'], itemm['price_precision'] = self.calc_qnt_func(symbol, enter_deJure_price, depo)            
         except Exception as ex:
             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
         print(f"{symbol}:\nitemm['qnt']: {itemm['qnt']}") 
@@ -107,366 +173,39 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 
         return itemm
 
-    def tp_make_orders(self, symbol, depo, target_prices):
+    def tp_make_orders(self, symbol, target_prices):
         item = {}
         market_type = 'LIMIT'
         is_selling = -1
         tp_price = None 
         success_flag = False
-        item["symbol"] = symbol        
-        
+        item["symbol"] = symbol  
+        open_limit_tp_order = None
+        tp_tg_response = "Some problem with creating tpOrder..."      
+                
         try:
             if not target_prices:  
                 trades_data = self.exchange.fetch_my_trades(symbol)    
                 filtered_data = [x for x in trades_data if x['side'] == 'buy']     
                 sorted_data = sorted(filtered_data, key=lambda x: x['timestamp'])              
-                item['enter_price'] = sorted_data[-1]['info']['price'] 
-                # print(item['enter_price'])
-                item['price_precision'] = self.count_multipliter_places(item['enter_price'])
-                # print(item['price_precision'])
-                # return             
-                
-                tp_mode = 'S'
-                tp_ratio = self.TP_rate
-                item['atr'] = None  
-                atr_TP_coef = None          
-                tp_price = self.static_tp_calc(item, tp_mode, tp_ratio, atr_TP_coef)
-                print(f"target_price: {tp_price}")  
-                # return
-                item['qnt'] = float(sorted_data[-1]['info']['qty'])
-                print(item['qnt'])
-                # return
-                      
-                open_static_tp_order, success_flag = self.make_order(item, is_selling, tp_price, market_type)
-                print(f'open_static_tp_order  {open_static_tp_order}')
-                tp_tg_response = None
-
+                enter_price = sorted_data[-1]['info']['price']                
+                price_precision = self.count_multipliter_places(enter_price)                
+                tp_price = self.static_tp_calc(symbol, enter_price, price_precision, self.TP_rate, self.atr_TP_coef)                
+                item['qnt'] = float(sorted_data[-1]['info']['qty'])                
+                open_limit_tp_order, success_flag = self.make_order(item, is_selling, tp_price, market_type)
+                print(f'open_static_tp_order  {open_limit_tp_order}')         
                 if success_flag:       
                     tp_tg_response = "Take profit was created succesfully!"
-                else:
-                    tp_tg_response = "Some problem with creating tpOrder..."
+            else:
+                pass
 
-                return tp_tg_response
+
    
         except Exception as ex:
-            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{'sljrn'}")
+            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{open_limit_tp_order}")
 
-        return "Some problem with creating tpOrder..."
-
-
-
-        # return tp_tg_response
-        
-        # return item
-            
-# {'info': {'symbol': 'BTCUSDT', 'id': '3381919667', 'orderId': '24421877188', 'orderListId': '-1', 'price': '41608.00000000', 'qty': '0.00029000', 'quoteQty': '12.06632000', 'commission': '0.00000029', 'commissionAsset': 'BTC', 'time': '1705775204887', 'isBuyer': True, 'isMaker': False, 'isBestMatch': True}, 'timestamp': 1705775204887, 'datetime': '2024-01-20T18:26:44.887Z', 'symbol': 'BTC/USDT', 'id': '3381919667', 'order': '24421877188', 'type': None, 'side': 'buy', 'takerOrMaker': 'taker', 'price': 41608.0, 'amount': 0.00029, 'cost': 12.06632, 'fee': {'cost': 2.9e-07, 'currency': 'BTC'}, 'fees': [{'cost': 2.9e-07, 'currency': 'BTC'}]}
-# None
-# None
-    
-#     # ///////////////////////////////////////////////////////////////////////////////
-#     async def positions_info(self):
-#         positions_data = None
-#         positions_data = await self.get_open_positions()
-#         try:
-#             if len(positions_data) != 0:
-#                 positions_data = await self.format_positions_data(positions_data)
-#             else:
-#                 positions_data = []
-
-#         except Exception as ex:
-#             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{positions_data}")
-
-
-#         return positions_data
-
-#     async def format_positions_data(self, positions_data):
-#         formatted_data = ""
-#         for position in positions_data:
-#             formatted_data += f"Symbol: {position['symbol']}\n"
-#             formatted_data += f"Position Amount: {position['positionAmt']}\n"
-#             formatted_data += f"Entry Price: {position['entryPrice']}\n"
-#             formatted_data += f"Break-Even Price: {position['breakEvenPrice']}\n"
-#             formatted_data += f"Mark Price: {position['markPrice']}\n"
-#             formatted_data += f"Unrealized Profit: {position['unRealizedProfit']}\n"
-#             formatted_data += f"Liquidation Price: {position['liquidationPrice']}\n"
-#             formatted_data += f"Leverage: {position['leverage']}\n"
-#             formatted_data += f"Max Notional Value: {position['maxNotionalValue']}\n"
-#             formatted_data += f"Margin Type: {position['marginType']}\n"
-#             formatted_data += f"Isolated Margin: {position['isolatedMargin']}\n"
-#             formatted_data += f"Auto Add Margin: {position['isAutoAddMargin']}\n"
-#             # formatted_data += f"Position Side: {position['positionSide']}\n"
-#             formatted_data += f"Notional: {position['notional']}\n"
-#             formatted_data += f"Isolated Wallet: {position['isolatedWallet']}\n"
-#             formatted_data += f"Update Time: {datetime.utcfromtimestamp(position['updateTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')}\n"
-#             formatted_data += f"Isolated: {position['isolated']}\n"
-#             formatted_data += f"ADL Quantile: {position['adlQuantile']}\n\n"
-
-#         return formatted_data.strip()
-    
-#     # ///////////////////////////////////////////////////////////////////////////////
-
-#     async def close_all_poss(self):
-#         positions_data = None
-#         cancel_orders_list = []
-#         unSuccess_cancel_orders_list = []
-#         success_closePosition_list = []
-#         problem_closePosition_list = []
-#         defender_corrector = 1
-#         new_positions_data = []
-        
-#         positions_data = await self.get_open_positions()
-#         print(f"positions_data: {positions_data}")
-#         if positions_data:
-#            for x in positions_data:
-#                 if float(x['positionAmt']) != 0:
-#                     if float(x['positionAmt']) > 0:
-#                         defender_corrector = 1
-#                     else:
-#                         defender_corrector = -1
-#                 else:
-#                     continue
-
-#                 new_positions_data.append({
-#                         "symbol": x['symbol'],
-#                         "defender": defender_corrector,
-#                         "qnt": abs(float(x['positionAmt'])),
-#                     })
-#         print(f"new_positions_data: {new_positions_data}")
-                
-#         is_selling = -1
-#         target_price = None
-#         market_type = 'MARKET'
-#         close_resp_flag = False
-#         if new_positions_data:
-#             for item in new_positions_data:
-#                 close_resp_flag = False
-#                 try:
-#                     _, close_resp_flag = await self.make_order(item, is_selling, target_price, market_type)
-#                 except:
-#                     pass
-#                 if close_resp_flag:
-#                     success_closePosition_list.append(item['symbol'])                    
-#                 else:
-#                     problem_closePosition_list.append(item['symbol'])
-
-#         # if success_closePosition_list and problem_closePosition_list:
-#         # cancel_orders_list, unSuccess_cancel_orders_list = await self.cancel_all_orders_for_position(success_closePosition_list)  
-#         cancel_orders_list, unSuccess_cancel_orders_list = await self.cancel_order_by_id(success_closePosition_list)
-#         # elif success_closePosition_list and not problem_closePosition_list:
-#         # cancel_orders_list, unSuccess_cancel_orders_list = await self.cancel_all_open_orders()              
-
-#         return success_closePosition_list, problem_closePosition_list, cancel_orders_list, unSuccess_cancel_orders_list
-                
-#     async def close_custom_poss(self, symbol):
-#         positions_data = None
-#         cancel_orders_list = []
-#         unSuccess_cancel_orders_list = []
-#         success_closePosition_list = []
-#         problem_closePosition_list = []
-#         defender_corrector = 1
-#         new_positions_data = {}
-        
-#         positions_data = await self.get_open_positions()
-#         positions_data = [x for x in positions_data if x["symbol"] == symbol][0]
-#         print(f"positions_data: {positions_data}")
-#         if positions_data:           
-#             if float(positions_data['positionAmt']) != 0:
-#                 if float(positions_data['positionAmt']) > 0:
-#                     defender_corrector = 1
-#                 else:
-#                     defender_corrector = -1
-
-#                 new_positions_data = {
-#                         "symbol": positions_data['symbol'],
-#                         "defender": defender_corrector,
-#                         "qnt": abs(float(positions_data['positionAmt'])),
-#                     }
-#         print(f"new_positions_data: {new_positions_data}")
-                
-#         is_selling = -1
-#         target_price = None
-#         market_type = 'MARKET'
-#         close_resp_flag = False
-#         if new_positions_data:            
-#             close_resp_flag = False
-#             try:
-#                 _, close_resp_flag = await self.make_order(new_positions_data, is_selling, target_price, market_type)
-#             except:
-#                 pass
-#             if close_resp_flag:
-#                 success_closePosition_list.append(new_positions_data['symbol'])                    
-#             else:
-#                 problem_closePosition_list.append(new_positions_data['symbol'])
-
-#         # if success_closePosition_list and problem_closePosition_list:
-#         # cancel_orders_list, unSuccess_cancel_orders_list = await self.cancel_all_orders_for_position(success_closePosition_list)  
-#         cancel_orders_list, unSuccess_cancel_orders_list = await self.cancel_order_by_id(success_closePosition_list)
-#         # elif success_closePosition_list and not problem_closePosition_list:
-#         # cancel_orders_list, unSuccess_cancel_orders_list = await self.cancel_all_open_orders()              
-
-#         return success_closePosition_list, problem_closePosition_list, cancel_orders_list, unSuccess_cancel_orders_list
+        return tp_tg_response
  
-    
-    
-#     # /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-# # self.MIN_VOLUM_DOLLARS
-
-# # utils_apii = UTILS_API() 
-
-# # # python -m API.orders_utils
-    
-
-
-
-
-
-
-
-
-
-
-
-# #         def try_to_close_by_market_open_position_by_stake(self, main_stake):
-
-# #         close_pos_by_market = None            
-# #         is_selling = -1
-# #         target_price = None
-# #         market_type = 'MARKET'
-# #         succes_closed_symbol_list = []
-# #         dont_closed_symbol_list = []
-
-# #         for item in main_stake:
-# #             success_flag = False
-# #             try:
-# #                 _, success_flag = self.make_order(item, is_selling, target_price, market_type)
-                
-# #                 if success_flag:
-# #                     succes_closed_symbol_list.append(item["symbol"])
-# #                 else:
-# #                     dont_closed_symbol_list.append(item["symbol"])
-                    
-# #             except Exception as ex:
-# #                 # print(ex)
-# #                 dont_closed_symbol_list.append(item["symbol"])
-# #                 continue
-
-# #         return succes_closed_symbol_list, dont_closed_symbol_list
-    
-# #     def try_to_close_by_market_all_open_positions(self, main_stake):
-
-# #         all_positions = None   
-# #         succes_closed_symbol_list = []     
-# #         dont_closed_symbol_list = []    
-# #         is_selling = -1
-# #         target_price = None
-# #         market_type = 'MARKET'
-# #         all_openPos_symbols = []
-
-# #         try:
-# #             all_positions = self.get_open_positions()  
-# #         except Exception as ex:
-# #             print(ex)
-
-# #         all_openPos_symbols = [x["symbol"] for x in all_positions]  
-# #         # print(all_openPos_symbols)     
-
-# #         for item in main_stake:
-# #             success_flag = False 
-# #             # print(item)
-# #             if item["symbol"] in all_openPos_symbols:
-# #                 try:
-# #                     _, success_flag = self.make_order(item, is_selling, target_price, market_type)
-# #                     if success_flag:
-# #                         succes_closed_symbol_list.append(item["symbol"])
-# #                     else:
-# #                         dont_closed_symbol_list.append(item["symbol"])                
-# #                 except Exception as ex:
-# #                     # print(ex)
-# #                     dont_closed_symbol_list.append(item["symbol"])
-# #                     # close_pos_by_market_answer_list.append(ex)
-# #                     continue
-
-# #         return succes_closed_symbol_list, dont_closed_symbol_list
-
-
-    
-
-    def calc_qnt_func(self, symbol, price, depo, rounding_type='round'): 
-        symbol_info = None
-        symbol_data = None 
-        price_precision = None
-        quantity_precision = None
-        quantity = None  
-        notional = None
-        recalc_depo = None
-        usdt_flag = False
-        # min_qnt = None 
-        if depo.endswith('USDT'):
-            depo = float(depo.replace('USDT', '').strip())
-            print(depo*2)
-            usdt_flag = True
-        elif depo.endswith(f"{symbol.replace('USDT', '').strip()}"):            
-            depo = depo.upper()
-            depo = float(depo.replace(f"{symbol.replace('USDT', '').strip()}", '').strip())
-            print(depo*2)
-
-        # return
-        
-        try:
-            symbol_info = self.get_excangeInfo(symbol)
-        except Exception as ex:
-            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
-
-        if symbol_info:
-            try:
-                symbol_data = next((item for item in symbol_info["symbols"] if item['symbol'] == symbol), None)
-                # print(symbol_data)
-            except Exception as ex:
-                logging.error(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
-            
-        if symbol_data:
-        
-            try:
-                tick_size = float(symbol_data['filters'][0]["tickSize"])
-                lot_size_filter = next((f for f in symbol_data.get('filters', []) if f.get('filterType') == 'LOT_SIZE'), None)
-                if lot_size_filter:
-                    quantity_precision = -int(math.log10(float(lot_size_filter.get('stepSize', '1'))))
-                    print(f"quantity_precision: {quantity_precision}")
-                
-                min_qnt = float(next((f['minQty'] for f in symbol_data['filters'] if f['filterType'] == 'LOT_SIZE'), None))
-                max_qnt = float(next((f['maxQty'] for f in symbol_data['filters'] if f['filterType'] == 'LOT_SIZE'), None))
-
-                minNotional = float(next((f['minNotional'] for f in symbol_data['filters'] if f['filterType'] == 'NOTIONAL'), None))
-                maxNotional = float(next((f['maxNotional'] for f in symbol_data['filters'] if f['filterType'] == 'NOTIONAL'), None))
-
-            except Exception as ex:
-                logging.error(f"An error occurred: {ex}")
-
-            try:
-                price_precision = self.count_multipliter_places(tick_size)                    
-            except Exception as ex:
-                print(ex)
-            
-            try:
-                print(f"notional: {minNotional}") 
-                print(f"notional: {maxNotional}")       
-               
-                if depo <= minNotional:
-                    depo = minNotional               
-                elif depo >= maxNotional:
-                    depo = maxNotional 
-                if rounding_type == 'round':
-                    quantity = round(depo / price, quantity_precision)
-                                    
-            except Exception as ex:
-                logging.error(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}") 
-
-        return quantity, recalc_depo, price_precision
-
 # //////////////////////////////////////////////////////////////////////////////
 
     # def json_write_trades(self, formatted_trades, symbol):
@@ -652,11 +391,11 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 
         return False
 
-utils_apii = UTILS_APII()
-symbol = 'BTCUSDT'
-depo = 10
-target_prices = []
-print(utils_apii.tp_make_orders(symbol, depo, target_prices))
+# utils_apii = UTILS_APII()
+# symbol = 'BTCUSDT'
+# depo = 10
+# target_prices = []
+# print(utils_apii.tp_make_orders(symbol, depo, target_prices))
 # print(utils_apii.get_myBook(symbol))
 
 # python -m API_BINANCE.utils_api

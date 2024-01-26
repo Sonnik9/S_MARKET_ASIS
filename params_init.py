@@ -59,7 +59,7 @@ class URL_TEMPLATES(BASIC_PARAMETRS):
 class TIME_TEMPLATES(URL_TEMPLATES):   
     def __init__(self) -> None:
         super().__init__()
-        self.KLINE_TIME, self.TIME_FRAME = 15, 'm'
+        self.KLINE_TIME, self.TIME_FRAME = 15, 'h'
         self.INTERVAL = str(self.KLINE_TIME) + self.TIME_FRAME
 
 class FILTER_SET(TIME_TEMPLATES):
@@ -80,13 +80,14 @@ class FILTER_SET(TIME_TEMPLATES):
 class RISKK(FILTER_SET):
     def __init__(self) -> None:
         super().__init__()
-        self.static_TP_flag = True 
+        self.tp_mode = 'S' # 'A'
         self.TP_rate = 4 # %      
-        self.SL_ratio = 3  # %  
+        self.SL_ratio = 3  # %        
         # /////////////////////////////////////////        
         self.atr_TP_coef = 0.9
-        self.atr_TP_flag = False
-        self.risk_ralations = self.TP_rate/self.SL_ratio 
+    def risk_init(self):
+        self.risk_ralations = self.TP_rate/self.SL_ratio
+
 
 class INIT_PARAMS(RISKK):
     def __init__(self) -> None:
@@ -96,7 +97,8 @@ class INIT_PARAMS(RISKK):
     def init_itits(self):
         print('helloo')
         self.init_api_key()       
-        self.init_urls()        
+        self.init_urls()   
+        self.risk_init()     
         
 
 # params = INIT_PARAMS()

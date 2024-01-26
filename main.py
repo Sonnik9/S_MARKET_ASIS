@@ -285,22 +285,19 @@ class TG_MANAGER(TG_ASSISTENT):
             @self.bot.message_handler(func=lambda message: self.handle_redirect_risk_flag)
             def handle_filter_redirect(message):  
                 try:  
-                    self.handle_redirect_risk_flag = False  
-                             
-                    self.static_TP_flag = message.text.split(' ')[0].strip().upper() == 'S'           
-                    self.atr_TP_flag = message.text.split(' ')[0].strip().upper() == 'A'                           
-
-                    if self.static_TP_flag:
+                     
+                    response_message = f"Please enter a valid data and check the rest of the details"
+                    if message.text.split(' ')[0].strip().upper() == 'S':
+                        self.tp_mode = 'S'
                         self.TP_rate = float(message.text.split(' ')[1].strip().split('/')[0].strip())
                         self.SL_ratio = float(message.text.split(' ')[1].strip().split('/')[1].strip())
-                        self.risk_ralations = self.TP_rate/self.SL_ratio
-                                                
-                        response_message = f"The following parameters have been initialised:\nself.static_TP_flag = {self.static_TP_flag}, self.TP_rate = {self.TP_rate} self.risk_ralations = {self.risk_ralations}"
-                    elif self.atr_TP_flag: 
-                                       
-                        self.atr_TP_coef = float(message.text.split(' ')[1].strip())                      
-                       
-                        response_message = f"The following parameters have been initialised:\nself.atr_TP_flag = {self.atr_TP_flag}, self.atr_TP_coef = {self.atr_TP_coef}"
+                        self.risk_init()                                                                       
+                        response_message = f"The following parameters have been initialised:\ntp_mode = {self.tp_mode}, self.TP_rate = {self.TP_rate} risk_ralations = {self.risk_ralations}"
+                        self.handle_redirect_risk_flag = False
+                    elif message.text.split(' ')[0].strip().upper() == 'A':                                      
+                        self.atr_TP_coef = float(message.text.split(' ')[1].strip())             
+                        response_message = f"The following parameters have been initialised:\ntp_mode = {self.tp_mode}, atr_TP_coef = {self.atr_TP_coef}"
+                        self.handle_redirect_risk_flag = False
                      
                     message.text = self.connector_func(message, response_message) 
                     
@@ -308,8 +305,7 @@ class TG_MANAGER(TG_ASSISTENT):
                     logging.exception(
                         f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
                     response_message = "Please enter a valid data and check the rest of the details. Then try again (e.g.: s 4/2) or (e.g.: a 1.2)"
-                    message.text = self.connector_func(message, response_message)
-                    self.open_order_redirect_flag = True
+                    message.text = self.connector_func(message, response_message)                    
 
             @self.bot.message_handler(func=lambda message: message.text == 'RISK')
             def handle_seq9(message): 
@@ -410,7 +406,7 @@ class TG_MANAGER(TG_ASSISTENT):
                     print(message.text)
                     response_message = ""
                     if message.text == '1':
-                        response_message = "Please enter a coin and depo/quantity with a space (e.g.: btc 12usdt) or (e.g.: btc 0.002btc)"
+                        response_message = "Please enter a coin (e.g.: btc) or (e.g.: eth)"
                         self.tp_order_auto_redirect_flag = True
                             
                     elif message.text == '2':
@@ -431,10 +427,10 @@ class TG_MANAGER(TG_ASSISTENT):
                 target_prices = []   
                 try:
                     symbol = message.text.split(' ')[0].strip().upper() + 'USDT'     
-                    depo = message.text.split(' ')[1].strip().upper()                              
+                    # depo = message.text.split(' ')[1].strip().upper()                              
                     response_message = "Please waiting..."                    
                     message.text = self.connector_func(message, response_message)    
-                    tp_response = self.tp_order_tgButton_handler(symbol, depo, target_prices)                               
+                    tp_response = self.tp_make_orders(symbol, target_prices)                               
                     message.text = self.connector_func(message, tp_response)   
                 except Exception as ex:
                     logging.exception(
