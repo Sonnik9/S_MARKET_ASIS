@@ -238,3 +238,14 @@
 
 # #         return succes_closed_symbol_list, dont_closed_symbol_list
 
+
+            
+            # if self.tp_mode == 'A':
+            #     timeframe = '15m'
+            #     limit = 100
+            #     m1_15_data = self.get_ccxtBinance_klines(symbol, timeframe, limit)            
+            #     m1_15_data['TR'] = abs(m1_15_data['High'] - m1_15_data['Low'])
+            #     m1_15_data['ATR'] = m1_15_data['TR'].rolling(window=14).mean()
+            #     item['atr'] = m1_15_data['ATR'].iloc[-1]
+
+

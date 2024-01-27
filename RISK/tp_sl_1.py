@@ -9,13 +9,13 @@ class RISK_MANAGEMENT(GETT_API_CCXT):
     def __init__(self) -> None:
         super().__init__()
 
-    def static_tp_calc(self, symbol, enter_price, price_precision, tp_ratio, atr_TP_coef):
+    def static_tp_calc(self, symbol, enter_price, price_precision, tp_ratio, atr_TP_coef, tp_mode):
         
         tp_price = None       
                 
         try:
-            if self.tp_mode == 'S':                      
-                tp_price = round(float(enter_price) * (1 + (tp_ratio/100)), price_precision)
+            if tp_mode == 'S':                      
+                tp_price = round(enter_price * (1 + (tp_ratio/100)), price_precision)
             else:  
                 timeframe = '1h'
                 limit = 100
@@ -24,7 +24,7 @@ class RISK_MANAGEMENT(GETT_API_CCXT):
                 m1_15_data['ATR'] = m1_15_data['TR'].rolling(window=14).mean()
                 atr = m1_15_data['ATR'].iloc[-1]  
                 print(f"atr: {atr}")                           
-                tp_price = round(float(enter_price) + (atr * atr_TP_coef), price_precision)                
+                tp_price = round(enter_price + (atr * atr_TP_coef), price_precision)                
         except Exception as ex:
             logging.error(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")    
 

@@ -77,16 +77,6 @@ class TG_ASSISTENT(UTILS_APII):
             item["tick_size"] = None
             item["atr"] = None
             item["done_level"] = None
-            item["current_price"] = self.get_current_price(symbol)
-            print(f'item["current_price"]: {item["current_price"]}')
-            
-            if self.atr_TP_flag:
-                timeframe = '15m'
-                limit = 100
-                m1_15_data = self.get_ccxtBinance_klines(symbol, timeframe, limit)            
-                m1_15_data['TR'] = abs(m1_15_data['High'] - m1_15_data['Low'])
-                m1_15_data['ATR'] = m1_15_data['TR'].rolling(window=14).mean()
-                item['atr'] = m1_15_data['ATR'].iloc[-1]
 
             item = self.buy_market_order_temp_func(item, depo, is_selling)
 
@@ -272,7 +262,7 @@ class TG_MANAGER(TG_ASSISTENT):
                     logging.exception(
                         f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
 
-            @self.bot.message_handler(func=lambda message: message.text == "RISK" and not self.block_acess_flag)
+            @self.bot.message_handler(func=lambda message: message.text == "RISK" and self.seq_control_flag and not self.block_acess_flag)
             def handle_filter(message):  
                 try:          
                     response_message = "Please enter a risk options: tp_mode and corresponings metrics (e.g.: s 4/2) or (e.g.: a 1.2)" 
@@ -292,9 +282,10 @@ class TG_MANAGER(TG_ASSISTENT):
                         self.TP_rate = float(message.text.split(' ')[1].strip().split('/')[0].strip())
                         self.SL_ratio = float(message.text.split(' ')[1].strip().split('/')[1].strip())
                         self.risk_init()                                                                       
-                        response_message = f"The following parameters have been initialised:\ntp_mode = {self.tp_mode}, self.TP_rate = {self.TP_rate} risk_ralations = {self.risk_ralations}"
+                        response_message = f"The following parameters have been initialised:\ntp_mode = {self.tp_mode}, TP_rate = {self.TP_rate} risk_ralations = {self.risk_ralations}"
                         self.handle_redirect_risk_flag = False
-                    elif message.text.split(' ')[0].strip().upper() == 'A':                                      
+                    elif message.text.split(' ')[0].strip().upper() == 'A':
+                        self.tp_mode = 'A'                                      
                         self.atr_TP_coef = float(message.text.split(' ')[1].strip())             
                         response_message = f"The following parameters have been initialised:\ntp_mode = {self.tp_mode}, atr_TP_coef = {self.atr_TP_coef}"
                         self.handle_redirect_risk_flag = False
@@ -410,7 +401,8 @@ class TG_MANAGER(TG_ASSISTENT):
                         self.tp_order_auto_redirect_flag = True
                             
                     elif message.text == '2':
-                        response_message = "Please enter a coin, depo/quantity and target prices with a space (e.g.: btc 12usdt 45500) or (e.g.: btc 0.002btc 45500 46500 47500)"
+                        response_message = "Please enter a coin, depo or quantity and target prices with a space (e.g.: btc 12usdt/45500) or (e.g.: btc 0.002btc/45500 0.002btc/46500 0.002btc/47500)"
+                        self.tp_order_custom_redirect_flag = True
                     
                     message.text = self.connector_func(message, response_message)
                 except Exception as ex:
@@ -422,22 +414,44 @@ class TG_MANAGER(TG_ASSISTENT):
                 print('bndgjklb nadgjklbn') 
                 self.tp_order_auto_redirect_flag = False 
                 tp_response = "Some problems with making tp order..."
-                symbol = 0
-                depo = 0
+                symbol = None
                 target_prices = []   
                 try:
                     symbol = message.text.split(' ')[0].strip().upper() + 'USDT'     
                     # depo = message.text.split(' ')[1].strip().upper()                              
                     response_message = "Please waiting..."                    
                     message.text = self.connector_func(message, response_message)    
-                    tp_response = self.tp_make_orders(symbol, target_prices)                               
+                    tp_response = self.tp_make_orders(symbol, target_prices, self.TP_rate, self.atr_TP_coef, self.tp_mode)                               
                     message.text = self.connector_func(message, tp_response)   
                 except Exception as ex:
                     logging.exception(
                         f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
                     response_message = "Please enter a valid data and check the rest of the details. Then try again (e.g.: btc 9)"
                     message.text = self.connector_func(message, response_message)
-                    self.tp_order_auto_redirect_flag = True             
+                    self.tp_order_auto_redirect_flag = True 
+
+            @self.bot.message_handler(func=lambda message: self.tp_order_custom_redirect_flag)
+            def handle_tpOrder_redirect_custom(message):  
+                self.tp_order_custom_redirect_flag = False
+                symbol = None
+                target_prices = []
+                tp_response = ""
+                try:
+                    dataa = message.text.strip().split(' ')
+                    symbol = dataa[0].upper() + 'USDT'                   
+                    target_prices = dataa[1:]
+                    print(symbol)
+                    print(target_prices)
+
+                    response_message = "Please waiting..."                    
+                    message.text = self.connector_func(message, response_message)  
+                    tp_response = self.tp_make_orders(symbol, target_prices, self.TP_rate, self.atr_TP_coef, self.tp_mode)                   
+                    message.text = self.connector_func(message, tp_response)  
+                except Exception as ex:
+                    logging.exception(
+                        f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+
+                           
 
             # /////////////////////////////////////////////////////////////////////////////////            
 

@@ -70,17 +70,17 @@ class GETT_API_CCXT(CONNECTOR_TG):
 
     #     return 'Some problems with fetching last price'
     
-    # def transformed_qnt(self, symbol, amount):
+    def transformed_qnt(self, symbol, amount):
         
-    #     self.exchange.load_markets()
-    #     formatted_amount = self.exchange.amount_to_precision(symbol, amount)
-    #     return formatted_amount
+        self.exchange.load_markets()
+        formatted_amount = self.exchange.amount_to_precision(symbol, amount)
+        return formatted_amount
 
-    # def transformed_price(self, symbol, price):
+    def transformed_price(self, symbol, price):
         
-    #     self.exchange.load_markets()
-    #     formatted_price = self.exchange.price_to_precision(symbol, price)
-    #     return formatted_price
+        self.exchange.load_markets()
+        formatted_price = self.exchange.price_to_precision(symbol, price)
+        return formatted_price
 
 class GETT_API(GETT_API_CCXT):
 
