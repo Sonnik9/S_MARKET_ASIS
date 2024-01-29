@@ -89,7 +89,35 @@ class RISKK(FILTER_SET):
         self.risk_ralations = self.TP_rate/self.SL_ratio
 
 
-class INIT_PARAMS(RISKK):
+class HANDLER_PARAMS(RISKK):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def init_handler_params(self):
+        self.seq_control_flag = False 
+        self.seq_controlStart_flag = False
+        self.dont_seq_control = False
+        self.block_acess_flag = False 
+        self.block_acess_counter = 0
+        self.start_day_date = None
+
+        self.handle_redirect_risk_flag = False
+
+        self.start_flag = False
+        self.settings_tg_flag = False
+        self.settings_1_redirect_flag = False
+        self.settings_2_redirect_flag = False        
+        self.open_order_redirect_flag = False
+        self.handle_getLink_redirect_flag = False
+        self.tp_order_redirect_flag = False
+        self.tp_order_auto_redirect_flag = False
+        self.tp_order_custom_redirect_flag = False
+        self.handle_buyPlusOrder_redirect_flag = False
+        self.handle_cancelOrders_redirect_flag = False
+        self.book_triger_flag = False       
+
+
+class INIT_PARAMS(HANDLER_PARAMS):
     def __init__(self) -> None:
         super().__init__()
         self.init_itits()
@@ -98,7 +126,8 @@ class INIT_PARAMS(RISKK):
         print('helloo')
         self.init_api_key()       
         self.init_urls()   
-        self.risk_init()     
+        self.risk_init()  
+        self.init_handler_params()   
         
 
 # params = INIT_PARAMS()

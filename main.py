@@ -22,26 +22,6 @@ class TG_ASSISTENT(UTILS_APII):
 
     def __init__(self):
         super().__init__()
-        self.seq_control_flag = False 
-        self.seq_controlStart_flag = False
-        self.dont_seq_control = False
-        self.block_acess_flag = False 
-        self.block_acess_counter = 0
-        self.start_day_date = None
-
-        self.handle_redirect_risk_flag = False
-
-        self.start_flag = False
-        self.settings_tg_flag = False
-        self.settings_1_redirect_flag = False
-        self.settings_2_redirect_flag = False        
-        self.open_order_redirect_flag = False
-        self.handle_getLink_redirect_flag = False
-        self.tp_order_redirect_flag = False
-        self.tp_order_auto_redirect_flag = False
-        self.tp_order_custom_redirect_flag = False
-        self.book_triger_flag = False
-        
 
     def connector_func(self, message, response_message):
         retry_number = 3
@@ -93,29 +73,6 @@ class TG_ASSISTENT(UTILS_APII):
             print(f"main121: {ex}")
 
         return buy_order_returned_list, item['enter_deFacto_price']
-    
-    def closePos_template(self, success_closePosition_list, problem_closePosition_list, cancel_orders_list, unSuccess_cancel_orders_list, close_tg_reply):
-        try:
-            print(f"success_closePosition_list, problem_closePosition_list, cancel_orders_list, unSuccess_cancel_orders_list: {success_closePosition_list, problem_closePosition_list, cancel_orders_list, unSuccess_cancel_orders_list}")
-            if success_closePosition_list:
-                byStr_success_closePosition_list = [str(x) for x in success_closePosition_list]
-                close_tg_reply += 'The next positions was closing by succesfully:\n' + ', '.join(byStr_success_closePosition_list) + '\n'
-            else:
-                close_tg_reply += 'There is no one positions was closing by succesfully' + '\n'
-            if problem_closePosition_list:
-                byStr_problem_closePosition_list = [str(x) for x in problem_closePosition_list]
-                close_tg_reply += 'The next positions was NOT closing by succesfully:\n' + ', '.join(byStr_problem_closePosition_list) + '\n'
-            if cancel_orders_list:
-                byStr_cancel_orders_list = [str(x) for x in cancel_orders_list]
-                close_tg_reply += 'The next TPorders was canceled by succesfully:\n' + ', '.join(byStr_cancel_orders_list) + '\n'
-            if unSuccess_cancel_orders_list:
-                byStr_unSuccess_cancel_orders_list = [str(x) for x in unSuccess_cancel_orders_list]
-                close_tg_reply += 'The next TPorders was NOT canceled by succesfully:\n' + ', '.join(byStr_unSuccess_cancel_orders_list) + '\n'
-        except Exception as ex:
-            logging.exception(
-                f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-
-        return close_tg_reply
                 
 class TG_MANAGER(TG_ASSISTENT):
     def __init__(self):
@@ -430,9 +387,26 @@ class TG_MANAGER(TG_ASSISTENT):
                     message.text = self.connector_func(message, response_message)
                     self.tp_order_auto_redirect_flag = True 
 
+                         
+
+            # ///////////////////////////////////////////////////////////////////////////////// 
+            @self.bot.message_handler(func=lambda message: message.text == "BUY+" and self.seq_control_flag and not self.block_acess_flag)
+            def handle_buyPlusOrder(message):   
+                try:
+                    response_message = "Please enter a coin, depo or quantity and target prices with a space (e.g.: btc 12usdt/45500) or (e.g.: btc 0.002btc/45500 0.002btc/46500 0.002btc/47500)"    
+                    message.text = self.connector_func(message, response_message)  
+                    self.handle_buyPlusOrder_redirect_flag = True 
+
+                except Exception as ex:
+                    logging.exception(
+                        f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+
             @self.bot.message_handler(func=lambda message: self.tp_order_custom_redirect_flag)
+            @self.bot.message_handler(func=lambda message: self.handle_buyPlusOrder_redirect_flag)
             def handle_tpOrder_redirect_custom(message):  
+                is_selling = 1 if self.handle_buyPlusOrder_redirect_flag else -1 
                 self.tp_order_custom_redirect_flag = False
+                self.handle_buyPlusOrder_redirect_flag = False
                 symbol = None
                 target_prices = []
                 tp_response = ""
@@ -445,15 +419,74 @@ class TG_MANAGER(TG_ASSISTENT):
 
                     response_message = "Please waiting..."                    
                     message.text = self.connector_func(message, response_message)  
-                    tp_response = self.tp_make_orders(symbol, target_prices, self.TP_rate, self.atr_TP_coef, self.tp_mode)                   
+                    tp_response = self.tp_make_orders(symbol, target_prices, is_selling, self.TP_rate, self.atr_TP_coef, self.tp_mode)                   
                     message.text = self.connector_func(message, tp_response)  
+                except Exception as ex:
+                    logging.exception(
+                        f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
+                    
+            @self.bot.message_handler(func=lambda message: message.text == "BUY+")
+            def handle_seq10(message):
+            
+                try: 
+                    response_message = "Please tab START and put a valid token!"
+                    message.text = self.connector_func(message, response_message)
+                except Exception as ex:
+                    logging.exception(
+                        f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+   
+            # /////////////////////////////////////////////////////////////////////////////////
+            @self.bot.message_handler(func=lambda message: message.text == "CANCEL_ORDERS" and self.seq_control_flag and not self.block_acess_flag)
+            def handle_cancelOrders(message):   
+                try:
+                    response_message = "Please enter a symbol, orderId, all_actives_flag with a space (e.g.: btc 23967976987 n) or (e.g.: btc n n) or (e.g.: n n y)"    
+                    message.text = self.connector_func(message, response_message)  
+                    self.handle_cancelOrders_redirect_flag = True 
+
                 except Exception as ex:
                     logging.exception(
                         f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
 
-                           
+            @self.bot.message_handler(func=lambda message: self.handle_cancelOrders_redirect_flag)
+            def handle_cancelOrders(message): 
+                
+                try:
+                    symbol = None
+                    orderId = None
+                    all_actives_flag = None
+                    dataa = None
+                    self.handle_cancelOrders_redirect_flag = False  
+                    response_message = "Please waiting..."    
+                    message.text = self.connector_func(message, response_message)  
+                    dataa = message.text.strip().split(' ')
+                    dataa = [x.strip() for x in dataa if x != ' ' and x != '']
+                    print(dataa)
+                    symbol = dataa[0].upper()
+                    orderId = dataa[1].upper()
+                    all_actives_flag = dataa[2].upper()
+                    symbol = None if symbol == 'N' else symbol + 'USDT'         
+                    orderId = None if orderId == 'N' else int(orderId)                    
+                    all_actives_flag = False if all_actives_flag == 'N' else True
 
-            # /////////////////////////////////////////////////////////////////////////////////            
+                    canceling_repl = self.cancel_orders_temp_func(symbol, orderId, all_actives_flag)
+                    message.text = self.connector_func(message, canceling_repl)
+
+                except Exception as ex:
+                    logging.exception(
+                        f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+                    self.handle_cancelOrders_redirect_flag = True
+                    canceling_repl = "Some problems with canceling orders..."
+                    message.text = self.connector_func(message, canceling_repl)
+
+            @self.bot.message_handler(func=lambda message: message.text == "CANCEL_ORDERS")
+            def handle_seq11(message): 
+                try:
+                    response_message = "Please tab START and put a valid token!"
+                    message.text = self.connector_func(message, response_message)
+                except Exception as ex:
+                    logging.exception(
+                        f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+            # /////////////////////////////////////////////////////////////////////////////////
 
             @self.bot.message_handler(func=lambda message: message.text == "BOOK" and self.seq_control_flag and not self.block_acess_flag)
             def handle_book(message): 

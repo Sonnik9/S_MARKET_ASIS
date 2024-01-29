@@ -249,3 +249,29 @@
             #     item['atr'] = m1_15_data['ATR'].iloc[-1]
 
 
+    # def get_price_precession(self, symbol):
+    #     price_precision = None
+    #     symbol_info = None
+    #     symbol_data = None
+    #     tick_size = None
+    #     try:
+    #         symbol_info = self.get_excangeInfo(symbol)
+    #         if symbol_info:   
+    #             symbol_data = next((item for item in symbol_info["symbols"] if item['symbol'] == symbol), None)
+    #             # print(symbol_data)
+    #         if symbol_data:       
+    #             tick_size = float(symbol_data['filters'][0]["tickSize"])
+    #             price_precision = self.count_multipliter_places(tick_size)      
+    #     except Exception as ex:
+    #         logging.error(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
+
+    #     return price_precision
+
+
+    # def json_write_trades(self, formatted_trades, symbol):
+        
+    #     output_file=f'{symbol}_tradesBook.json'
+    #     with open(output_file, 'w') as json_file:
+    #         json.dump(formatted_trades, json_file, indent=2)
+
+

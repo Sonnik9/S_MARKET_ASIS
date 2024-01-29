@@ -69,24 +69,6 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
             return len(number_str.split('.')[1])
         return 0
     
-    # def get_price_precession(self, symbol):
-    #     price_precision = None
-    #     symbol_info = None
-    #     symbol_data = None
-    #     tick_size = None
-    #     try:
-    #         symbol_info = self.get_excangeInfo(symbol)
-    #         if symbol_info:   
-    #             symbol_data = next((item for item in symbol_info["symbols"] if item['symbol'] == symbol), None)
-    #             # print(symbol_data)
-    #         if symbol_data:       
-    #             tick_size = float(symbol_data['filters'][0]["tickSize"])
-    #             price_precision = self.count_multipliter_places(tick_size)      
-    #     except Exception as ex:
-    #         logging.error(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
-
-    #     return price_precision
-
     def calc_qnt_func(self, symbol, depo, rounding_type='round'): 
         symbol_info = None
         symbol_data = None 
@@ -179,10 +161,10 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 
         return itemm
 
-    def tp_make_orders(self, symbol, target_prices, TP_rate, atr_TP_coef, tp_mode):
+    def tp_make_orders(self, symbol, target_prices, is_selling, TP_rate, atr_TP_coef, tp_mode):
         item = {}
         market_type = 'LIMIT'
-        is_selling = -1
+        print(f"is_selling: {is_selling}")
         tp_price = None 
         success_flag = False
         item["symbol"] = symbol  
@@ -216,10 +198,15 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
                     print(f"tp_price: {tp_price}")
                     open_limit_tp_order, success_flag = self.make_order(item, is_selling, tp_price, market_type)
                     print(f'open_static_tp_order  {open_limit_tp_order}')  
-                    if success_flag:       
-                        tp_tg_response += f"Take profit with orderId: {open_limit_tp_order['orderId']} was created succesfully!" + '\n'
-                    else:
+                    if success_flag and is_selling == -1:       
+                        tp_tg_response += f"Take profit (LIMIT order) with orderId: {open_limit_tp_order['orderId']} was created succesfully!" + '\n'
+                    elif not success_flag and is_selling == -1: 
                         tp_tg_response += "Some problem with creating tpOrder..." + '\n'
+
+                    elif success_flag and is_selling == 1:       
+                        tp_tg_response += f"BUY+ (LIMIT) with orderId: {open_limit_tp_order['orderId']} was created succesfully!" + '\n'
+                    elif not success_flag and is_selling == 1: 
+                        tp_tg_response += "Some problem with creating BUY+ (LIMIT)..." + '\n'
 
                     time.sleep(1)
 
@@ -229,12 +216,6 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
         return tp_tg_response
  
 # //////////////////////////////////////////////////////////////////////////////
-
-    # def json_write_trades(self, formatted_trades, symbol):
-        
-    #     output_file=f'{symbol}_tradesBook.json'
-    #     with open(output_file, 'w') as json_file:
-    #         json.dump(formatted_trades, json_file, indent=2)
 
     def csv_write_trades(self, data, label, cur_time, total_total_profit):
         output_file = f'{label}_{cur_time}_tradesBook.csv'
@@ -412,12 +393,33 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
 
         return False
+    
+    def cancel_orders_temp_func(self, symbol, orderId, all_actives_flag):
+        trades_symbol_list = []
+        canceling_resp = None
+       
+        try:
+            if all_actives_flag:
+                trades_symbol_list = self.exchange.fetch_total_balance()
+                trades_symbol_list = [f"{key}USDT" for key, value in trades_symbol_list.items() if float(value) !=0 and key != 'USDT']
+                # print(trades_symbol_list)                
+            else:
+                trades_symbol_list = []
+
+            canceling_resp = self.universal_canceling(symbol, orderId, trades_symbol_list)
+                
+        except Exception as ex:
+            logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+
+        return canceling_resp
 
 # utils_apii = UTILS_APII()
-# symbol = 'BTCUSDT'
-# depo = 10
-# target_prices = []
-# print(utils_apii.tp_make_orders(symbol, depo, target_prices))
+# # symbol = 'BTCUSDT'
+# symbol, orderId = None, None
+# all_actives_flag = True
+# # depo = 10
+# # target_prices = []
+# print(utils_apii.cancel_orders_temp_func(symbol, orderId, all_actives_flag))
 # print(utils_apii.get_myBook(symbol))
 
 # python -m API_BINANCE.utils_api

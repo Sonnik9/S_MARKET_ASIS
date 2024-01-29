@@ -83,10 +83,10 @@
 # except Exception as ex:
 #     logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
 
-message = 'btc 12usdt/45000 15usdt/47100'   
+# message = 'btc 12usdt/45000 15usdt/47100'   
 
-target_prices = message.strip().split(' ')
-symbol = target_prices[0]
-print(symbol)
-print(target_prices[1:])
+# target_prices = message.strip().split(' ')
+# symbol = target_prices[0]
+# print(symbol)
+# print(target_prices[1:])
 

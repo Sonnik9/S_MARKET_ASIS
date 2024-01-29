@@ -6,16 +6,32 @@ class DELETEE_API(POSTT_API):
     def __init__(self) -> None:
         super().__init__()        
 
-    def cancel_order_by_id(self, success_closePosition_list):
+    def universal_canceling(self, symbol, orderId, trades_symbol_list):
         method = 'DELETE'
+        cancel_status = ""
         cancel_order = None
-        all_orders = None        
+        all_orders = []      
         cancel_orders_list = []
         unSuccess_cancel_orders_list = []
         url = self.URL_PATTERN_DICT['create_order_url']
-        all_orders = self.get_all_orders()
-        all_orders = [x for x in all_orders if x["symbol"] in success_closePosition_list]
-        print(all_orders)
+        if not symbol and not orderId and len(trades_symbol_list) != 0:
+            all_orders = self.get_all_orders()
+            all_orders = [x for x in all_orders if x["symbol"] in trades_symbol_list]
+            # print(all_orders)
+        elif symbol and not orderId and len(trades_symbol_list) == 0:
+            all_orders = self.get_all_orders()
+            all_orders = [x for x in all_orders if x["symbol"] == symbol]
+            # print(all_orders)    
+
+        elif symbol and orderId and len(trades_symbol_list) == 0:  
+            all_orders.append({
+                "symbol": symbol,
+                "orderId": orderId
+            }) 
+            # print(all_orders)  
+
+        else:
+            cancel_status += "Some problems with canceling orders..."
 
         for item in all_orders:
             cancel_order = None            
@@ -28,11 +44,12 @@ class DELETEE_API(POSTT_API):
             print(cancel_order)              
 
             if "status" in cancel_order and cancel_order["status"] == "CANCELED":                
-                cancel_orders_list.append(item["symbol"])
-            else:                
-                unSuccess_cancel_orders_list.append(item["symbol"])
+                cancel_status += f"{item['symbol']} limit order with orderId: {item['orderId']} was canceled succesfully!"
+            else:  
+                cancel_status += f"Some problems with canceling {item['symbol']} limit order with orderId: {item['orderId']}..."              
+                
             
-        return cancel_orders_list, unSuccess_cancel_orders_list
+        return cancel_status
 
     # async def cancel_all_orders_for_position(self, symbol_list):
     #     cancel_orders_list = []  
