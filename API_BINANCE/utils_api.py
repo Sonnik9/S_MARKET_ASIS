@@ -1,7 +1,9 @@
 from API_BINANCE.delete_api import DELETEE_API 
 from RISK.tp_sl_1 import RISK_MANAGEMENT
-from datetime import datetime
 from decimal import Decimal, ROUND_DOWN
+import requests
+from bs4 import BeautifulSoup
+from datetime import datetime
 import math
 import asyncio
 import csv
@@ -412,6 +414,86 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
 
         return canceling_resp
+    
+
+# //////////////////////////////////////////////////////////////////////////////////////////////////////
+# //////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+class PARSER_COIN_MARKET():
+    def __init__(self) -> None:        
+        pass
+        
+    def req(self, url, headers):
+            
+        data_tickers = []
+        coin_name = None
+        r = requests.get(url, headers=headers)
+        soup = BeautifulSoup(r.text, 'lxml')
+        tablee = soup.find('tbody').find_all('tr', recursive=True)
+
+        for tik in tablee:
+            coin_name = None
+            coin_name_pre = None
+            try:                
+                coin_name_pre = tik.find_all('td')[2]            
+                if coin_name_pre:                   
+                    try:
+                        coin_name = coin_name_pre.find_all('p')[-1].text.strip()
+                        if coin_name.upper() != 'USDT':
+                            data_tickers.append(coin_name+'USDT')    
+                    except:                      
+                        # print(coin_name_pre)
+                        coin_name = coin_name_pre.find('span', class_="crypto-symbol").text.strip()
+                        if coin_name.upper() != 'USDT':
+                            data_tickers.append(coin_name+'USDT') 
+
+            except Exception as ex:
+                logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{coin_name}")
+                
+
+        return data_tickers
+
+    def process_parser(self, slicee):
+        tickers = None
+        tickers_list = []
+        headers = {
+            'authority': 'coinmarketcap.com',
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'accept-language': 'en-US,en;q=0.9',
+            'cache-control': 'max-age=0',
+            'if-none-match': '"10w167pxbou88xt"',
+            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Linux"',
+            'sec-fetch-dest': 'document',
+            'sec-fetch-mode': 'navigate',
+            'sec-fetch-site': 'none',
+            'sec-fetch-user': '?1',
+            'upgrade-insecure-requests': '1',
+            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        }
+        # for n in range(1, 2, 1):
+        n = 1
+        # url = f'https://www.coingecko.com/en?page={n}'
+        url = f'https://coinmarketcap.com/ru/'
+        tickers = self.req(url, headers)
+
+        if tickers:
+            tickers_list += tickers
+
+        return tickers_list[:slicee]
+
+
+parser = PARSER_COIN_MARKET()
+slicee = 20
+print(parser.process_parser(40))
+
+
+
+    
+
+# //////////////////////////////////////////////////////////////////////////////////////////////////////
+# /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # utils_apii = UTILS_APII()
 # # symbol = 'BTCUSDT'

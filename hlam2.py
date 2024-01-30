@@ -274,4 +274,131 @@
     #     with open(output_file, 'w') as json_file:
     #         json.dump(formatted_trades, json_file, indent=2)
 
+            # /////////////////////////////////////////////////////////////////////////////// 
+                
+            # @self.bot.message_handler(func=lambda message: message.text not in self.reserved_frathes_list)
+            # def handle_exceptionsInput(message):
+            #     try:
+            #         response_message = f"Try again and enter a valid option."
+            #         message.text = self.connector_func(message, response_message)   
+            #     except Exception as ex:
+            #         logging.exception(
+            #             f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")  
+            
+            
+
+
+#     def req(self, url, headers, n):
+        
+#         data_tickers = []
+#         coin_name = None
+#         week_dinamic = None
+#         day_dinamic = None
+#         oneHour_dinamic = None
+#         position_ind = None
+#         r = requests.get(url, headers=headers)
+#         print(r)
+#         soup = BeautifulSoup(r.text, 'lxml')
+#         tablee = soup.find('div', class_='position-relative').find('table')
+#         parent_trs = tablee.find_all('tr', recursive=True)
+
+#         for i, tik in enumerate(parent_trs):
+#             position_ind = (n-1)*100 + i
+#             coin_name = None
+#             coin_name_pre = None
+#             week_dinamic = None
+#             week_dinamic_pre = None
+#             day_dinamic = None
+#             day_dinamic_pre = None
+#             oneHour_dinamic = None
+#             oneHour_dinamic_pre = None
+#             try:
+#                 coin_name_pre = tik.find('td', class_='coin-name')
+#                 if coin_name_pre:
+#                     coin_name = coin_name_pre.find_all('span')[1].text.strip()
+#             except:
+#                 continue
+#             try:
+#                 week_dinamic_pre = tik.find('td', class_='td-change7d')
+#                 if week_dinamic_pre:
+#                     week_dinamic = float(week_dinamic_pre.get_text(separator=' ', strip=True).split('%')[0])
+#             except:
+#                 continue
+#             try:
+#                 day_dinamic_pre = tik.find('td', class_='td-change24h')
+#                 if day_dinamic_pre:
+#                     day_dinamic = float(day_dinamic_pre.get_text(separator=' ', strip=True).split('%')[0])
+#             except:
+#                 continue
+#             try:
+#                 oneHour_dinamic_pre = tik.find('td', class_='td-change1h')
+#                 if oneHour_dinamic_pre:
+#                     oneHour_dinamic = float(oneHour_dinamic_pre.get_text(separator=' ', strip=True).split('%')[0])
+#             except:
+#                 continue
+
+#             # td_elements = tik.find_all('td')
+
+#             # for td in td_elements:
+#             #     classes = td.get_attribute_list('class')       
+#             #     if 'coin-name' in classes:              
+#             #         coin_name = td.find_all('span')[1].text.strip()
+        
+#             #     if 'td-change7d' in classes:
+#             #         try:
+#             #             week_dinamic = float(td.get_text(separator=' ', strip=True).split('%')[0])
+#             #         except:
+#             #             continue
+        
+#             #     if 'td-change24h' in classes:
+#             #         try:
+#             #             day_dinamic = float(td.get_text(separator=' ', strip=True).split('%')[0])
+#             #         except:
+#             #             continue
+#             #     if 'td-change1h' in classes:
+#             #         try:
+#             #             oneHour_dinamic = float(td.get_text(separator=' ', strip=True).split('%')[0])
+#             #         except:
+#             #             continue
+#             if coin_name and week_dinamic and day_dinamic and oneHour_dinamic:
+#                 data_tickers.append((coin_name, week_dinamic, day_dinamic, oneHour_dinamic, position_ind))
+
+#         return data_tickers[1:]
+
+#     def process_parser(self):
+#         tickers = None
+#         tickers_list = []
+#         headers = {
+#             'authority': 'pagead2.googlesyndication.com',
+#             'accept': '*/*',
+#             'accept-language': 'en-US,en;q=0.9',
+#             'cache-control': 'max-age=0',
+#             'referer': 'https://fd8e368e638676c19e503d549675a66f.safeframe.googlesyndication.com/',
+#             'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+#             'sec-ch-ua-mobile': '?0',
+#             'sec-ch-ua-platform': '"Linux"',
+#             'sec-fetch-dest': 'empty',
+#             'sec-fetch-mode': 'no-cors',
+#             'sec-fetch-site': 'same-site',
+#             'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+#             'x-client-data': 'CIm2yQEIo7bJAQipncoBCN3wygEIlKHLAQiHoM0BCMzuzQEIg/DNARiPzs0BGKfqzQEY+vLNAQ==',
+#         }
+#         # for n in range(1, 2, 1):
+#             # url = f'https://www.coingecko.com/en?page={n}'
+#         url = f'https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjsudPaJgrSrUFVzXRhHGHzao2CV9nYhUDlVlYj7NgIs7b2MQuk-uFh-ZjxU2epTapvQO7L1TvfWewnqHYScnAFRJ7MKZ3auZCmNtWgh1SJw-qxjWXiAmB_XhNFBe7E-ZujKSgXUqUyOZ71eeKHECX6yAzcEOjfo3Bw&sig=Cg0ArKJSzP5UxgWGS6mQEAE&id=lidartos&mcvt=33933&p=164,467,254,1437&mtos=33933,33933,33933,33933,33933&tos=34677,0,0,0,0&v=20240129&bin=7&avms=nio&bs=0,0&mc=1&if=1&app=0&itpl=30&adk=1722924575&rs=4&la=0&cr=0&uach=WyJMaW51eCIsIjYuMC4wIiwieDg2IiwiIiwiMTIwLjAuNjA5OS4yMTYiLG51bGwsMCxudWxsLCI2NCIsW1siTm90X0EgQnJhbmQiLCI4LjAuMC4wIl0sWyJDaHJvbWl1bSIsIjEyMC4wLjYwOTkuMjE2Il0sWyJHb29nbGUgQ2hyb21lIiwiMTIwLjAuNjA5OS4yMTYiXV0sMF0%3D&vs=4&r=b&co=170663554101&rst=1706635541160&rpt=1493&isd=0&lsd=0&ec=1&met=ie&wmsd=0&pbe=0&vae=0&spb=0&ffslot=0&reach=0&io2=0'
+#         tickers = self.req(url, headers)
+
+#         if tickers:
+#             tickers_list += tickers
+
+#         # print(len(tickers_list))
+#         ranging_coins_list = sorted(tickers_list, key=lambda x: x[1], reverse=True)
+#         # final_coins_list = list(filter(lambda item: item[1] > 5, ranging_coins_list))
+#         file_name = f'coins_for_prep_{len(ranging_coins_list)}'
+#         # now = datetime.now() 
+#         # curentTimeForFile = now.strftime("%d_%m_%Y__%H_%M")
+#         # w_r_flag = 'w'
+#         # txt_redactor.txt_redactor_func(final_coins_list, curentTimeForFile, w_r_flag, file_name)  
+
+#         return ranging_coins_list
 
