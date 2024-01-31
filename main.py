@@ -140,8 +140,13 @@ class TG_MANAGER(TG_ASSISTENT):
                     top_coins = None    
                     response_message = "Please waiting..."
                     message.text = self.connector_func(message, response_message)
-                    top_coins = self.assets_filters()
-                    top_coins = [f"{link_emoji} https://www.coinglass.com/tv/Binance_{x}" for x in top_coins]
+                    if self.CoinMarcetCup_source_flag:
+                        top_coins = self.process_parser()
+                        top_coins = top_coins[:self.CoinMarcetCup_topCoins_slice]
+                        top_coins = [f"{link_emoji} https://www.coinglass.com/tv/Binance_{x}" for x in top_coins]
+                    else:
+                        top_coins = self.assets_filters()
+                        top_coins = [f"{link_emoji} https://www.coinglass.com/tv/Binance_{x}" for x in top_coins]
                     response_message = ""
                     if top_coins:
                         # response_message = str(top_coins)[2:-2].replace("', '", " ")
@@ -412,6 +417,62 @@ class TG_MANAGER(TG_ASSISTENT):
                     self.handle_cancelOrders_redirect_flag = True
                     canceling_repl = "Some problems with canceling orders..."
                     message.text = self.connector_func(message, canceling_repl)
+
+            # /////////////////////////////////////////////////////////////////////////////////
+
+            @self.bot.message_handler(func=lambda message: (message.text == "SELL_ALL") and self.seq_control_flag and not self.block_acess_flag)
+            def handle_sellAllOrders(message):
+                response_message = "Are you sure you want to sell all activies? If 'yes' please enter a token..."
+                message.text = self.connector_func(message, response_message) 
+                self.sell_all_redirect_flag = True
+
+            @self.bot.message_handler(func=lambda message: self.sell_all_redirect_flag)
+            def handle_sellAllOrders_redirect(message):
+                try:  
+                    self.sell_all_redirect_flag = False
+                    if message.text.strip() == self.seq_control_token:
+                                            
+                        response_message = "Please waiting..."
+                        message.text = self.connector_func(message, response_message)           
+                        trades_symbol_list = self.exchange.fetch_total_balance()
+                        is_selling = -1
+                        sell_order_returned_list = []
+                        order_tg_reply = ""
+
+                        for key, value in trades_symbol_list.items():
+                            symbol = None 
+                            depo = None
+                            order_esential = "ABRAKADABRA"
+                            if float(value) !=0 and key != 'USDT':
+                                symbol = f"{key}USDT"
+                                depo = str(value) + key
+                                # print(symbol)
+                                # print(depo)
+                                sell_order_returned_list, enter_deFacto_price = self.buy_order_tgButton_handler(symbol, depo, is_selling)
+
+                                if sell_order_returned_list:
+                                    if is_selling == 1:
+                                        order_esential = 'BUY'
+                                    elif is_selling == -1:
+                                        order_esential = 'SELL'
+                                    if 0 in sell_order_returned_list:
+                                        order_tg_reply += f"Some exceptions with placeing {order_esential} order..." + '\n'                        
+                                    if -1 in sell_order_returned_list:
+                                        order_tg_reply += f"Some problem with placeing {order_esential} order..." + '\n'
+                                    if 1 in sell_order_returned_list:
+                                        order_tg_reply += f"The {order_esential} order was executed successfully. Enter price = {enter_deFacto_price}" + '\n'
+                                else:
+                                    order_tg_reply += f"Some exceptions with placeing {order_esential} order..."
+
+                                message.text = self.connector_func(message, order_tg_reply)         
+                    else:
+                        mess_resp = "Something wrong..."
+                        message.text = self.connector_func(message, mess_resp)
+
+                except Exception as ex:
+                    logging.exception(
+                        f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
+         
 
             # /////////////////////////////////////////////////////////////////////////////////
 

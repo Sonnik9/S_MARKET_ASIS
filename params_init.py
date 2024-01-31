@@ -65,10 +65,13 @@ class TIME_TEMPLATES(URL_TEMPLATES):
 class FILTER_SET(TIME_TEMPLATES):
     def __init__(self) -> None:
         super().__init__()
-        self.daily_filter_flag = False # True = Daily candle is green(close_price > open_price)
-        self.SLICE_VOLUME_PAIRS = 50 # Slice of top pairs by volume    
+        self.CoinMarcetCup_source_flag = False
+        self.CoinMarcetCup_topCoins_slice = 10 # defore 100
+        # //////////////////////////////////////
+        self.daily_filter_determinator = 0 # 1 = Daily candle is green(close_price > open_price, -1 -- read, 0 --both
+        self.SLICE_VOLUME_PAIRS = 20 # Slice of top pairs by volume    
         self.slice_volatilyty_flag = True # Enabling a filter to search for pairs by volatility   
-        self.SLICE_VOLATILITY = 40 # Slice of top pairs by volatility
+        self.SLICE_VOLATILITY = 10 # Slice of top pairs by volatility
         self.price_filter_flag = False # Enabling a filter for a price range
         self.MIN_FILTER_PRICE = 0.001 # min price filter
         self.MAX_FILTER_PRICE = 3000000 # max price filter
@@ -114,6 +117,7 @@ class HANDLER_PARAMS(RISKK):
         self.tp_order_custom_redirect_flag = False
         self.handle_buyPlusOrder_redirect_flag = False
         self.handle_cancelOrders_redirect_flag = False
+        self.sell_all_redirect_flag = False
         self.book_triger_flag = False       
 
 

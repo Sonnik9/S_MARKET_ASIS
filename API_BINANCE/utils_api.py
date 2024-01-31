@@ -14,10 +14,72 @@ import logging, os, inspect
 logging.basicConfig(filename='config_log.log', level=logging.INFO)
 current_file = os.path.basename(__file__)
 
-class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
-
+class FILTERR(DELETEE_API, RISK_MANAGEMENT):
     def __init__(self) -> None:
         super().__init__()
+
+    def req(self, url, headers):
+            
+        data_tickers = []
+        coin_name = None
+        r = requests.get(url, headers=headers)
+        soup = BeautifulSoup(r.text, 'lxml')
+        tablee = soup.find('tbody').find_all('tr', recursive=True)
+
+        for tik in tablee:
+            coin_name = None
+            coin_name_pre = None
+            try:                
+                coin_name_pre = tik.find_all('td')[2]            
+                if coin_name_pre:                   
+                    try:
+                        coin_name = coin_name_pre.find_all('p')[-1].text.strip()
+                        if coin_name.upper() != 'USDT':
+                            data_tickers.append(coin_name+'USDT')    
+                    except:                      
+                        # print(coin_name_pre)
+                        coin_name = coin_name_pre.find('span', class_="crypto-symbol").text.strip()
+                        if coin_name.upper() != 'USDT':
+                            data_tickers.append(coin_name+'USDT') 
+
+            except Exception as ex:
+                logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{coin_name}")
+                
+
+        return data_tickers
+
+    def process_parser(self):
+        tickers = None
+        tickers_list = []
+        headers = {
+            'authority': 'coinmarketcap.com',
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'accept-language': 'en-US,en;q=0.9',
+            'cache-control': 'max-age=0',
+            'if-none-match': '"10w167pxbou88xt"',
+            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Linux"',
+            'sec-fetch-dest': 'document',
+            'sec-fetch-mode': 'navigate',
+            'sec-fetch-site': 'none',
+            'sec-fetch-user': '?1',
+            'upgrade-insecure-requests': '1',
+            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        }
+        # for n in range(1, 2, 1):
+        n = 1
+        # url = f'https://www.coingecko.com/en?page={n}'
+        url = f'https://coinmarketcap.com/ru/'
+        tickers = self.req(url, headers)
+
+        if tickers:
+            tickers_list += tickers
+
+        return tickers_list    
+
+    # //////////////////////////////////////////////////////////////////////////////////////////////////////
+    # /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     def assets_filters(self):
         all_tickers = []
@@ -51,10 +113,14 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
                 if self.slice_volatilyty_flag:
                     top_pairs = sorted(top_pairs, key=lambda x: abs(float(x['priceChangePercent'])), reverse=True)
                     top_pairs = top_pairs[:self.SLICE_VOLATILITY]
-                if self.daily_filter_flag:
+                if self.daily_filter_determinator == 1:
+                    # print(top_pairs)
                     top_pairs = [x for x in top_pairs if float(x['priceChange']) > 0]
+                elif self.daily_filter_determinator == -1:
+                    top_pairs = [x for x in top_pairs if float(x['priceChange']) < 0]
 
                 top_pairs = [x['symbol'] for x in top_pairs if x['symbol'] not in self.problem_pairs]
+                # print(top_pairs)
 
         except Exception as ex:
             logging.exception(
@@ -62,7 +128,14 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 
         return top_pairs
     
-    # ///////////////////////////////////////////////////////////////////////////
+# ///////////////////////////////////////////////////////////////////////////
+# /////////////////////////////////////////////////////////////////////////////
+
+class UTILS_APII(FILTERR):
+
+    def __init__(self) -> None:
+        super().__init__()
+
 
     def count_multipliter_places(self, number):
         # if isinstance(number, (int, float)):
@@ -139,8 +212,8 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
             itemm['qnt'], itemm['price_precision'] = self.calc_qnt_func(symbol, depo)            
         except Exception as ex:
             logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}")
-        print(f"{symbol}: itemm['qnt']: {itemm['qnt']}")        
-        print(f"{symbol}: itemm['itemm['price_precision']']: {itemm['price_precision']}") 
+        # print(f"{symbol}: itemm['qnt']: {itemm['qnt']}")        
+        # print(f"{symbol}: itemm['itemm['price_precision']']: {itemm['price_precision']}") 
         if itemm['qnt']:
             
             success_flag = False
@@ -419,81 +492,9 @@ class UTILS_APII(DELETEE_API, RISK_MANAGEMENT):
 # //////////////////////////////////////////////////////////////////////////////////////////////////////
 # //////////////////////////////////////////////////////////////////////////////////////////////////////
     
-class PARSER_COIN_MARKET():
-    def __init__(self) -> None:        
-        pass
+
         
-    def req(self, url, headers):
-            
-        data_tickers = []
-        coin_name = None
-        r = requests.get(url, headers=headers)
-        soup = BeautifulSoup(r.text, 'lxml')
-        tablee = soup.find('tbody').find_all('tr', recursive=True)
 
-        for tik in tablee:
-            coin_name = None
-            coin_name_pre = None
-            try:                
-                coin_name_pre = tik.find_all('td')[2]            
-                if coin_name_pre:                   
-                    try:
-                        coin_name = coin_name_pre.find_all('p')[-1].text.strip()
-                        if coin_name.upper() != 'USDT':
-                            data_tickers.append(coin_name+'USDT')    
-                    except:                      
-                        # print(coin_name_pre)
-                        coin_name = coin_name_pre.find('span', class_="crypto-symbol").text.strip()
-                        if coin_name.upper() != 'USDT':
-                            data_tickers.append(coin_name+'USDT') 
-
-            except Exception as ex:
-                logging.exception(f"An error occurred in file '{current_file}', line {inspect.currentframe().f_lineno}: {ex}\n{coin_name}")
-                
-
-        return data_tickers
-
-    def process_parser(self, slicee):
-        tickers = None
-        tickers_list = []
-        headers = {
-            'authority': 'coinmarketcap.com',
-            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'accept-language': 'en-US,en;q=0.9',
-            'cache-control': 'max-age=0',
-            'if-none-match': '"10w167pxbou88xt"',
-            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Linux"',
-            'sec-fetch-dest': 'document',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-site': 'none',
-            'sec-fetch-user': '?1',
-            'upgrade-insecure-requests': '1',
-            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        }
-        # for n in range(1, 2, 1):
-        n = 1
-        # url = f'https://www.coingecko.com/en?page={n}'
-        url = f'https://coinmarketcap.com/ru/'
-        tickers = self.req(url, headers)
-
-        if tickers:
-            tickers_list += tickers
-
-        return tickers_list[:slicee]
-
-
-parser = PARSER_COIN_MARKET()
-slicee = 20
-print(parser.process_parser(40))
-
-
-
-    
-
-# //////////////////////////////////////////////////////////////////////////////////////////////////////
-# /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # utils_apii = UTILS_APII()
 # # symbol = 'BTCUSDT'
